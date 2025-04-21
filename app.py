@@ -6,6 +6,25 @@ import requests
 # Set your OpenAI API key
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
+# SheetDB endpoint
+SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
+
+# Check if email was already used
+def email_already_used(email):
+    response = requests.get(f"{SHEETDB_URL}/search?Email={email}")
+    return response.status_code == 200 and len(response.json()) > 0
+
+# Save new email
+def save_email(email):
+    data = {"data": [{"Email": email}]}
+    try:
+        response = requests.post(SHEETDB_URL, json=data)
+        if response.status_code != 201:
+            st.warning("Something went wrong saving your email.")
+    except Exception as e:
+        st.error("Error saving email.")
+
+# UI
 st.title("NJ Lease Analyzer")
 st.write("Upload a lease PDF to get started.")
 
@@ -17,24 +36,14 @@ Always consult with a qualified attorney for legal guidance related to your leas
 ---
 """)
 
-# Email input
-email = st.text_input("Enter your email to receive updates or future access (required):")
+# Email required
+email = st.text_input("Enter your email to receive one free analysis (required):")
 
-# Save email to SheetDB
-def save_email(email):
-    sheetdb_url = "https://sheetdb.io/api/v1/ga5o59cph77t9"  # 🔁 Replace with your actual SheetDB URL
-    data = {"data": [{"Email": email}]}
-    try:
-        response = requests.post(sheetdb_url, json=data)
-        if response.status_code != 201:
-            st.warning("Something went wrong saving your email.")
-    except Exception as e:
-        st.error("Error saving email.")
-
+# Upload lease
 uploaded_file = st.file_uploader("Choose a lease PDF", type="pdf")
 
 if uploaded_file:
-    # Extract lease text from PDF
+    # Extract text
     pdf_reader = PyPDF2.PdfReader(uploaded_file)
     lease_text = ""
     for page in pdf_reader.pages:
@@ -43,13 +52,17 @@ if uploaded_file:
     st.subheader("Extracted Text:")
     st.text_area("Lease Text", lease_text, height=300)
 
-    # Check if email is valid before allowing analysis
+    # Validate email format
     if email and "@" in email and "." in email:
-        if st.button("Analyze Lease"):
-            save_email(email)
+        # Check if email already used
+        if email_already_used(email):
+            st.error("⚠️ This email has already used its free lease analysis. Please upgrade for additional access.")
+        else:
+            if st.button("Analyze Lease"):
+                save_email(email)
 
-            with st.spinner("Analyzing lease using NJ tenant law..."):
-                nj_rules = """
+                with st.spinner("Analyzing lease using NJ tenant law..."):
+                    nj_rules = """
 - Security deposit must not exceed 1.5 months’ rent.
 - Lease must allow tenant the right to a habitable space.
 - Landlord must give 30 days’ notice for rent increases on month-to-month leases.
@@ -57,7 +70,7 @@ if uploaded_file:
 - Security deposit must be returned within 30 days of lease end.
 """
 
-                prompt = f"""
+                    prompt = f"""
 You are a legal assistant trained in New Jersey tenant law.
 
 Your task is to review the lease text and identify whether it complies with the NJ tenant rules below.
@@ -80,31 +93,30 @@ LEASE TEXT:
 {lease_text}
 """
 
-                # GPT-4 call
-                response = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.2,
-                    max_tokens=600
-                )
+                    # GPT-4 call
+                    response = client.chat.completions.create(
+                        model="gpt-4",
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.2,
+                        max_tokens=600
+                    )
 
-                result = response.choices[0].message.content
+                    result = response.choices[0].message.content
 
-                # Remove duplicate lines
-                lines = result.strip().split("\n")
-                seen = set()
-                cleaned_lines = []
+                    # Remove duplicate lines
+                    lines = result.strip().split("\n")
+                    seen = set()
+                    cleaned_lines = []
 
-                for line in lines:
-                    line = line.strip()
-                    if line and line not in seen:
-                        seen.add(line)
-                        cleaned_lines.append(line)
+                    for line in lines:
+                        line = line.strip()
+                        if line and line not in seen:
+                            seen.add(line)
+                            cleaned_lines.append(line)
 
-                cleaned_result = "\n".join(cleaned_lines)
+                    cleaned_result = "\n".join(cleaned_lines)
 
-            st.subheader("Analysis:")
-            st.markdown(cleaned_result)
-
+                st.subheader("Analysis:")
+                st.markdown(cleaned_result)
     else:
-        st.info("📧 Please enter a valid email address to proceed with analysis.")
+        st.info("📧 Please enter a valid email address to continue.")
