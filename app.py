@@ -68,6 +68,7 @@ LEASE TEXT:
                 model="gpt-4",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.2,
+                max_tokens=600  # You can tweak this if needed
             )
 
             result = response.choices[0].message.content
