@@ -72,10 +72,23 @@ LEASE TEXT:
             )
 
             result = response.choices[0].message.content
+            # Remove repeated duplicate content (if GPT echoes itself)
+            parts = result.strip().split("\n\n")
+            unique_lines = []
+            seen = set()
+
+            for part in parts:
+                if part.strip() not in seen:
+                    seen.add(part.strip())
+                    unique_lines.append(part.strip())
+
+            cleaned_result = "\n\n".join(unique_lines)
+
 
             st.subheader("Analysis:")
             st.markdown(result)
 
         st.subheader("Analysis:")
-        st.markdown(result)
+        st.markdown(cleaned_result)
+
 
