@@ -31,7 +31,6 @@ if uploaded_file is not None:
 - Security deposit must be returned within 30 days of lease end.
 """
 
-            # Create prompt
             prompt = f"""
 You are a legal assistant trained in New Jersey tenant law.
 
@@ -44,51 +43,39 @@ Return the output using this format:
 
 Do NOT explain or include references. Just list the issue or compliance in this simple bullet format.
 
-❗ Only list each item once. Do not repeat or summarize again at the end.
+Only list each item once. Do not repeat or summarize. Do not restate the list again at the end. Do not include anything after the last bullet point. Your response must end immediately after the last item.
 
 Do not include any titles like "Analysis" in your response. Just start with the first bullet point.
 
-List each item only once. Do not repeat or restate anything. Do not add summaries. Do not end with any extra comments or formatting. Just stop after listing the items.
-
 NJ RULES:
-- Security deposit must not exceed 1.5 months’ rent.
-- Lease must allow tenant the right to a habitable space.
-- Landlord must give 30 days’ notice for rent increases on month-to-month leases.
-- Self-help eviction is illegal in NJ.
-- Security deposit must be returned within 30 days of lease end.
+{nj_rules}
 
 LEASE TEXT:
 {lease_text}
 """
 
-
-
-            # OpenAI GPT-4 call
+            # GPT-4 API call
             response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.2,
-                max_tokens=600  # You can tweak this if needed
+                max_tokens=600
             )
 
             result = response.choices[0].message.content
-            # Remove repeated duplicate content (if GPT echoes itself)
-            parts = result.strip().split("\n\n")
-            unique_lines = []
+
+            # Remove duplicate lines
+            lines = result.strip().split("\n")
             seen = set()
+            cleaned_lines = []
 
-            for part in parts:
-                if part.strip() not in seen:
-                    seen.add(part.strip())
-                    unique_lines.append(part.strip())
+            for line in lines:
+                line = line.strip()
+                if line and line not in seen:
+                    seen.add(line)
+                    cleaned_lines.append(line)
 
-            cleaned_result = "\n\n".join(unique_lines)
-
-
-            st.subheader("Analysis:")
-            st.markdown(result)
+            cleaned_result = "\n".join(cleaned_lines)
 
         st.subheader("Analysis:")
         st.markdown(cleaned_result)
-
-
