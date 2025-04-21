@@ -46,13 +46,17 @@ NJ RULES:
 """
 
             # OpenAI call
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.2,
-            )
+            from openai import OpenAI
 
-            result = response.choices[0].message["content"]
+client = OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": prompt}],
+    temperature=0.2,
+)
+
+result = response.choices[0].message.content
 
         st.subheader("Analysis:")
         st.write(result)
