@@ -1,8 +1,7 @@
 import streamlit as st
 import PyPDF2
 from openai import OpenAI
-import csv
-from pathlib import Path
+import requests
 
 # Set your OpenAI API key
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -21,16 +20,16 @@ Always consult with a qualified attorney for legal guidance related to your leas
 # Email input
 email = st.text_input("Enter your email to receive updates or future access (required):")
 
-# Save email to a local CSV file
+# Save email to SheetDB
 def save_email(email):
-    path = Path("emails.csv")
-    if not path.exists():
-        with open(path, "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["Email"])
-    with open(path, "a", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([email])
+    sheetdb_url = "https://sheetdb.io/api/v1/abcd1234"  # 🔁 Replace with your actual SheetDB URL
+    data = {"data": [{"Email": email}]}
+    try:
+        response = requests.post(sheetdb_url, json=data)
+        if response.status_code != 201:
+            st.warning("Something went wrong saving your email.")
+    except Exception as e:
+        st.error("Error saving email.")
 
 uploaded_file = st.file_uploader("Choose a lease PDF", type="pdf")
 
@@ -44,7 +43,7 @@ if uploaded_file:
     st.subheader("Extracted Text:")
     st.text_area("Lease Text", lease_text, height=300)
 
-    # Check if email is valid before showing analysis button
+    # Check if email is valid before allowing analysis
     if email and "@" in email and "." in email:
         if st.button("Analyze Lease"):
             save_email(email)
@@ -109,4 +108,3 @@ LEASE TEXT:
 
     else:
         st.info("📧 Please enter a valid email address to proceed with analysis.")
-
