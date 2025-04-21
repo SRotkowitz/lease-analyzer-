@@ -2,6 +2,8 @@ import streamlit as st
 import PyPDF2
 from openai import OpenAI
 import requests
+from io import BytesIO
+from reportlab.pdfgen import canvas
 
 # Set your OpenAI API key
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -24,6 +26,27 @@ def save_email(email):
     except Exception as e:
         st.error("Error saving email.")
 
+# Generate PDF from analysis text
+def generate_pdf(content, email, role):
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer)
+    pdf.setFont("Helvetica", 12)
+    pdf.drawString(40, 800, f"NJ Lease Analysis for: {email} ({role})")
+    pdf.drawString(40, 785, "-" * 90)
+
+    y = 760
+    for line in content.split("\n"):
+        if y < 50:
+            pdf.showPage()
+            pdf.setFont("Helvetica", 12)
+            y = 800
+        pdf.drawString(40, y, line)
+        y -= 18
+
+    pdf.save()
+    buffer.seek(0)
+    return buffer
+
 # UI
 st.title("NJ Lease Analyzer")
 st.write("Upload a lease PDF to get started.")
@@ -35,6 +58,9 @@ This tool is for **educational and informational purposes only** and does **not 
 Always consult with a qualified attorney for legal guidance related to your lease or rental situation.
 ---
 """)
+
+# Role selection
+role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"])
 
 # Email required
 email = st.text_input("Enter your email to receive one free analysis (required):")
@@ -72,6 +98,8 @@ if uploaded_file:
 
                     prompt = f"""
 You are a legal assistant trained in New Jersey tenant law.
+
+The user reviewing this lease is a {role.lower()}.
 
 Your task is to review the lease text and identify whether it complies with the NJ tenant rules below.
 
@@ -116,16 +144,24 @@ LEASE TEXT:
 
                     cleaned_result = "\n".join(cleaned_lines)
 
-                # Show analysis + download button
+                # Show analysis + download options
                 if cleaned_result:
                     st.subheader("Analysis:")
                     st.markdown(cleaned_result)
 
                     st.download_button(
-                        label="📥 Download Analysis",
+                        label="📥 Download as Text",
                         data=cleaned_result,
                         file_name="lease_analysis.txt",
                         mime="text/plain"
+                    )
+
+                    pdf_data = generate_pdf(cleaned_result, email, role)
+                    st.download_button(
+                        label="📄 Download as PDF",
+                        data=pdf_data,
+                        file_name="lease_analysis.pdf",
+                        mime="application/pdf"
                     )
     else:
         st.info("📧 Please enter a valid email address to continue.")
