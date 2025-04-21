@@ -1,6 +1,8 @@
 import streamlit as st
 import PyPDF2
 from openai import OpenAI
+import csv
+from pathlib import Path
 
 # Set your OpenAI API key
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -16,11 +18,24 @@ Always consult with a qualified attorney for legal guidance related to your leas
 ---
 """)
 
+# Email input
+email = st.text_input("Enter your email to receive updates or future access (required):")
+
+# Save email to a local CSV file
+def save_email(email):
+    path = Path("emails.csv")
+    if not path.exists():
+        with open(path, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Email"])
+    with open(path, "a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([email])
 
 uploaded_file = st.file_uploader("Choose a lease PDF", type="pdf")
 
-if uploaded_file is not None:
-    # Read and extract text from the PDF
+if uploaded_file:
+    # Extract lease text from PDF
     pdf_reader = PyPDF2.PdfReader(uploaded_file)
     lease_text = ""
     for page in pdf_reader.pages:
@@ -29,21 +44,13 @@ if uploaded_file is not None:
     st.subheader("Extracted Text:")
     st.text_area("Lease Text", lease_text, height=300)
 
-    email = st.text_input("Enter your email to receive updates or future access (required):")
+    # Check if email is valid before showing analysis button
+    if email and "@" in email and "." in email:
+        if st.button("Analyze Lease"):
+            save_email(email)
 
-    # Only show Analyze button if email is entered
-        if email and "@" in email and "." in email:
-            if st.button("Analyze Lease"):
-                with st.spinner("Analyzing lease using NJ tenant law..."):
-                # [Your existing GPT logic here...]
-                ...
-    else:
-        st.info("📧 Please enter a valid email to continue.")
-
-    # Button to run analysis
-    if st.button("Analyze Lease"):
-        with st.spinner("Analyzing lease using NJ tenant law..."):
-            nj_rules = """
+            with st.spinner("Analyzing lease using NJ tenant law..."):
+                nj_rules = """
 - Security deposit must not exceed 1.5 months’ rent.
 - Lease must allow tenant the right to a habitable space.
 - Landlord must give 30 days’ notice for rent increases on month-to-month leases.
@@ -51,7 +58,7 @@ if uploaded_file is not None:
 - Security deposit must be returned within 30 days of lease end.
 """
 
-            prompt = f"""
+                prompt = f"""
 You are a legal assistant trained in New Jersey tenant law.
 
 Your task is to review the lease text and identify whether it complies with the NJ tenant rules below.
@@ -74,28 +81,32 @@ LEASE TEXT:
 {lease_text}
 """
 
-            # GPT-4 API call
-            response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.2,
-                max_tokens=600
-            )
+                # GPT-4 call
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.2,
+                    max_tokens=600
+                )
 
-            result = response.choices[0].message.content
+                result = response.choices[0].message.content
 
-            # Remove duplicate lines
-            lines = result.strip().split("\n")
-            seen = set()
-            cleaned_lines = []
+                # Remove duplicate lines
+                lines = result.strip().split("\n")
+                seen = set()
+                cleaned_lines = []
 
-            for line in lines:
-                line = line.strip()
-                if line and line not in seen:
-                    seen.add(line)
-                    cleaned_lines.append(line)
+                for line in lines:
+                    line = line.strip()
+                    if line and line not in seen:
+                        seen.add(line)
+                        cleaned_lines.append(line)
 
-            cleaned_result = "\n".join(cleaned_lines)
+                cleaned_result = "\n".join(cleaned_lines)
 
-        st.subheader("Analysis:")
-        st.markdown(cleaned_result)
+            st.subheader("Analysis:")
+            st.markdown(cleaned_result)
+
+    else:
+        st.info("📧 Please enter a valid email address to proceed with analysis.")
+
