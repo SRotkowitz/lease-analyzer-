@@ -7,6 +7,7 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 st.title("NJ Lease Analyzer")
 st.write("Upload a lease PDF to get started.")
+
 st.markdown("""
 ---
 🔒 **Disclaimer:**  
