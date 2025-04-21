@@ -22,7 +22,7 @@ email = st.text_input("Enter your email to receive updates or future access (req
 
 # Save email to SheetDB
 def save_email(email):
-    sheetdb_url = "https://sheetdb.io/api/v1/abcd1234"  # 🔁 Replace with your actual SheetDB URL
+    sheetdb_url = "https://sheetdb.io/api/v1/ga5o59cph77t9"  # 🔁 Replace with your actual SheetDB URL
     data = {"data": [{"Email": email}]}
     try:
         response = requests.post(sheetdb_url, json=data)
