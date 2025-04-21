@@ -116,7 +116,16 @@ LEASE TEXT:
 
                     cleaned_result = "\n".join(cleaned_lines)
 
-                st.subheader("Analysis:")
-                st.markdown(cleaned_result)
+                # Show analysis + download button
+                if cleaned_result:
+                    st.subheader("Analysis:")
+                    st.markdown(cleaned_result)
+
+                    st.download_button(
+                        label="📥 Download Analysis",
+                        data=cleaned_result,
+                        file_name="lease_analysis.txt",
+                        mime="text/plain"
+                    )
     else:
         st.info("📧 Please enter a valid email address to continue.")
