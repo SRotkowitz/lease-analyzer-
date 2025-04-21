@@ -24,13 +24,25 @@ def save_email(email):
     except Exception as e:
         st.error("Error saving email.")
 
+# Generate PDF with disclaimer
 def generate_pdf(content, email, role):
+    disclaimer = (
+        "Disclaimer: This lease analysis is for educational and informational purposes only and "
+        "does not constitute legal advice. Always consult with a qualified attorney for legal guidance "
+        "regarding your specific situation."
+    )
+
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer)
-    pdf.setFont("Helvetica", 12)
+    pdf.setFont("Helvetica", 10)
     pdf.drawString(40, 800, f"NJ Lease Analysis for: {email} ({role})")
-    pdf.drawString(40, 785, "-" * 90)
-    y = 760
+    pdf.setFont("Helvetica-Oblique", 8)
+    pdf.drawString(40, 785, disclaimer[:110])
+    pdf.drawString(40, 773, disclaimer[110:])
+    pdf.setFont("Helvetica", 12)
+    pdf.drawString(40, 755, "-" * 90)
+
+    y = 735
     for line in content.split("\n"):
         if y < 50:
             pdf.showPage()
@@ -38,6 +50,7 @@ def generate_pdf(content, email, role):
             y = 800
         pdf.drawString(40, y, line)
         y -= 18
+
     pdf.save()
     buffer.seek(0)
     return buffer
@@ -133,7 +146,6 @@ LEASE TEXT:
 
                     result = response.choices[0].message.content
 
-                    # Remove duplicate lines
                     lines = result.strip().split("\n")
                     seen = set()
                     cleaned_lines = []
@@ -150,13 +162,24 @@ LEASE TEXT:
                     st.subheader("Analysis:")
                     st.markdown(cleaned_result)
 
+                    # Disclaimer for download files
+                    disclaimer = (
+                        "Disclaimer: This lease analysis is for educational and informational purposes only and "
+                        "does not constitute legal advice. Always consult with a qualified attorney for legal guidance "
+                        "regarding your specific situation.\n\n"
+                    )
+
+                    final_text = disclaimer + cleaned_result
+
+                    # Download as TXT
                     st.download_button(
                         label="📥 Download as Text",
-                        data=cleaned_result,
+                        data=final_text,
                         file_name="lease_analysis.txt",
                         mime="text/plain"
                     )
 
+                    # Download as PDF
                     pdf_data = generate_pdf(cleaned_result, email, role)
                     st.download_button(
                         label="📄 Download as PDF",
