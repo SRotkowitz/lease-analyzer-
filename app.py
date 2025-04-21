@@ -44,6 +44,8 @@ Return the output using this format:
 
 Do NOT explain or include references. Just list the issue or compliance in this simple bullet format.
 
+Do not include any titles like "Analysis" in your response. Just start with the first bullet point.
+
 NJ RULES:
 - Security deposit must not exceed 1.5 months’ rent.
 - Lease must allow tenant the right to a habitable space.
@@ -54,6 +56,7 @@ NJ RULES:
 LEASE TEXT:
 {lease_text}
 """
+
 
             # OpenAI GPT-4 call
             response = client.chat.completions.create(
