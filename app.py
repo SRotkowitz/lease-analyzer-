@@ -4,6 +4,8 @@ from openai import OpenAI
 import requests
 from io import BytesIO
 from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from textwrap import wrap
 
 # Set your OpenAI API key
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -24,32 +26,60 @@ def save_email(email):
     except Exception as e:
         st.error("Error saving email.")
 
-# Generate PDF with disclaimer
 def generate_pdf(content, email, role):
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    x_margin = 40
+    y = height - 40
+
     disclaimer = (
         "Disclaimer: This lease analysis is for educational and informational purposes only and "
         "does not constitute legal advice. Always consult with a qualified attorney for legal guidance "
         "regarding your specific situation."
     )
 
-    buffer = BytesIO()
-    pdf = canvas.Canvas(buffer)
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(40, 800, f"NJ Lease Analysis for: {email} ({role})")
-    pdf.setFont("Helvetica-Oblique", 8)
-    pdf.drawString(40, 785, disclaimer[:110])
-    pdf.drawString(40, 773, disclaimer[110:])
-    pdf.setFont("Helvetica", 12)
-    pdf.drawString(40, 755, "-" * 90)
+    resources = [
+        "Resources:",
+        "- NJ Truth-in-Renting Guide: https://www.nj.gov/dca/divisions/codes/publications/pdf_lti/truth_in_renting.pdf",
+        "- NJ Tenant Info Page: https://www.nj.gov/dca/divisions/codes/offices/landlord_tenant_information.html"
+    ]
 
-    y = 735
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_margin, y, f"NJ Lease Analysis for: {email} ({role})")
+    y -= 15
+
+    wrapped_disclaimer = wrap(disclaimer, 95)
+    pdf.setFont("Helvetica-Oblique", 8)
+    for line in wrapped_disclaimer:
+        pdf.drawString(x_margin, y, line)
+        y -= 12
+
+    y -= 10
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(x_margin, y, "-" * 95)
+    y -= 20
+
+    pdf.setFont("Helvetica", 10)
     for line in content.split("\n"):
+        wrapped_lines = wrap(line, 95)
+        for wrapped_line in wrapped_lines:
+            if y < 50:
+                pdf.showPage()
+                y = height - 40
+                pdf.setFont("Helvetica", 10)
+            pdf.drawString(x_margin, y, wrapped_line)
+            y -= 14
+
+    y -= 20
+    pdf.setFont("Helvetica-Bold", 10)
+    for line in resources:
         if y < 50:
             pdf.showPage()
-            pdf.setFont("Helvetica", 12)
-            y = 800
-        pdf.drawString(40, y, line)
-        y -= 18
+            y = height - 40
+            pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(x_margin, y, line)
+        y -= 14
 
     pdf.save()
     buffer.seek(0)
@@ -162,16 +192,13 @@ LEASE TEXT:
                     st.subheader("Analysis:")
                     st.markdown(cleaned_result)
 
-                    # Disclaimer for download files
                     disclaimer = (
                         "Disclaimer: This lease analysis is for educational and informational purposes only and "
                         "does not constitute legal advice. Always consult with a qualified attorney for legal guidance "
                         "regarding your specific situation.\n\n"
                     )
-
                     final_text = disclaimer + cleaned_result
 
-                    # Download as TXT
                     st.download_button(
                         label="📥 Download as Text",
                         data=final_text,
@@ -179,7 +206,6 @@ LEASE TEXT:
                         mime="text/plain"
                     )
 
-                    # Download as PDF
                     pdf_data = generate_pdf(cleaned_result, email, role)
                     st.download_button(
                         label="📄 Download as PDF",
