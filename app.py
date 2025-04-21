@@ -89,6 +89,16 @@ def generate_pdf(content, email, role):
 st.title("NJ Lease Analyzer")
 st.write("Upload a lease PDF to get started.")
 
+st.sidebar.markdown("📚 **Helpful Resources for NJ Tenants**")
+st.sidebar.markdown("""
+- [NJ Truth-in-Renting Guide (PDF)](https://www.nj.gov/dca/divisions/codes/publications/pdf_lti/truth_in_renting.pdf)
+- [NJ Landlord-Tenant Info Page](https://www.nj.gov/dca/divisions/codes/offices/landlord_tenant_information.html)
+""")
+
+role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"])
+email = st.text_input("Enter your email to receive one free analysis (required):")
+uploaded_file = st.file_uploader("Choose a lease PDF", type="pdf")
+
 st.markdown("""
 ---
 🔒 **Disclaimer:**  
@@ -100,16 +110,6 @@ We do not store or retain any uploaded lease documents or analysis results. All 
 Only your email address is saved (to verify free access) — nothing else is collected, tracked, or shared.
 ---
 """)
-
-st.sidebar.markdown("📚 **Helpful Resources for NJ Tenants**")
-st.sidebar.markdown("""
-- [NJ Truth-in-Renting Guide (PDF)](https://www.nj.gov/dca/divisions/codes/publications/pdf_lti/truth_in_renting.pdf)
-- [NJ Landlord-Tenant Info Page](https://www.nj.gov/dca/divisions/codes/offices/landlord_tenant_information.html)
-""")
-
-role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"])
-email = st.text_input("Enter your email to receive one free analysis (required):")
-uploaded_file = st.file_uploader("Choose a lease PDF", type="pdf")
 
 if uploaded_file:
     pdf_reader = PyPDF2.PdfReader(uploaded_file)
