@@ -29,6 +29,17 @@ if uploaded_file is not None:
     st.subheader("Extracted Text:")
     st.text_area("Lease Text", lease_text, height=300)
 
+    email = st.text_input("Enter your email to receive updates or future access (required):")
+
+    # Only show Analyze button if email is entered
+        if email and "@" in email and "." in email:
+            if st.button("Analyze Lease"):
+                with st.spinner("Analyzing lease using NJ tenant law..."):
+                # [Your existing GPT logic here...]
+                ...
+    else:
+        st.info("📧 Please enter a valid email to continue.")
+
     # Button to run analysis
     if st.button("Analyze Lease"):
         with st.spinner("Analyzing lease using NJ tenant law..."):
