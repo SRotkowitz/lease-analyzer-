@@ -34,14 +34,24 @@ if uploaded_file is not None:
             # Create prompt
             prompt = f"""
 You are a legal assistant trained in New Jersey tenant law.
-Review this lease text and compare it to the NJ rules below.
-List any violations or legal concerns in plain English.
+Your task is to review the lease text below and identify clear compliance or non-compliance with the NJ rules listed.
+
+DO NOT provide explanations or legal citations.
+
+INSTEAD, return output in this format:
+
+⚠️ Potential Issue: [short description]
+✅ Compliant: [short description]
+
+NJ RULES:
+- Security deposit must not exceed 1.5 months’ rent.
+- Lease must allow tenant the right to a habitable space.
+- Landlord must give 30 days’ notice for rent increases on month-to-month leases.
+- Self-help eviction is illegal in NJ.
+- Security deposit must be returned within 30 days of lease end.
 
 LEASE TEXT:
 {lease_text}
-
-NJ RULES:
-{nj_rules}
 """
 
             # OpenAI GPT-4 call
