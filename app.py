@@ -1,9 +1,9 @@
 import streamlit as st
 import PyPDF2
-import openai
+from openai import OpenAI
 
 # Set your OpenAI API key
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 st.title("NJ Lease Analyzer")
 st.write("Upload a lease PDF to get started.")
@@ -23,7 +23,6 @@ if uploaded_file is not None:
     # Button to run analysis
     if st.button("Analyze Lease"):
         with st.spinner("Analyzing lease using NJ tenant law..."):
-            # Sample NJ tenant rules
             nj_rules = """
 - Security deposit must not exceed 1.5 months’ rent.
 - Lease must allow tenant the right to a habitable space.
@@ -45,8 +44,18 @@ NJ RULES:
 {nj_rules}
 """
 
-            # OpenAI call
-            from openai import OpenAI
+            # OpenAI GPT-4 call
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.2,
+            )
+
+            result = response.choices[0].message.content
+
+        st.subheader("Analysis:")
+        st.write(result)
+
 
 client = OpenAI()
 
