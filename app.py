@@ -34,14 +34,15 @@ if uploaded_file is not None:
             # Create prompt
             prompt = f"""
 You are a legal assistant trained in New Jersey tenant law.
-Your task is to review the lease text below and identify clear compliance or non-compliance with the NJ rules listed.
 
-DO NOT provide explanations or legal citations.
+Your task is to review the lease text and identify whether it complies with the NJ tenant rules below.
 
-INSTEAD, return output in this format:
+Return the output using this format:
 
-⚠️ Potential Issue: [short description]
-✅ Compliant: [short description]
+- ⚠️ **Potential Issue:** [short description]
+- ✅ **Compliant:** [short description]
+
+Do NOT explain or include references. Just list the issue or compliance in this simple bullet format.
 
 NJ RULES:
 - Security deposit must not exceed 1.5 months’ rent.
