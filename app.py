@@ -44,6 +44,8 @@ Return the output using this format:
 
 Do NOT explain or include references. Just list the issue or compliance in this simple bullet format.
 
+❗ Only list each item once. Do not repeat or summarize again at the end.
+
 Do not include any titles like "Analysis" in your response. Just start with the first bullet point.
 
 NJ RULES:
@@ -56,6 +58,7 @@ NJ RULES:
 LEASE TEXT:
 {lease_text}
 """
+
 
 
             # OpenAI GPT-4 call
