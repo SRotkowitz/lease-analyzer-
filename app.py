@@ -99,18 +99,6 @@ role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"])
 email = st.text_input("Enter your email to receive one free analysis (required):")
 uploaded_file = st.file_uploader("Choose a lease PDF", type="pdf")
 
-st.markdown("""
----
-🔒 **Disclaimer:**  
-This tool is for **educational and informational purposes only** and does **not constitute legal advice**.  
-Always consult with a qualified attorney for legal guidance related to your lease or rental situation.
----
-🔐 **Privacy Notice**  
-We do not store or retain any uploaded lease documents or analysis results. All document processing happens temporarily during your session.  
-Only your email address is saved (to verify free access) — nothing else is collected, tracked, or shared.
----
-""")
-
 if uploaded_file:
     pdf_reader = PyPDF2.PdfReader(uploaded_file)
     lease_text = ""
@@ -219,3 +207,15 @@ LEASE TEXT:
                     )
     else:
         st.info("📧 Please enter a valid email address to continue.")
+
+st.markdown("""
+---
+🔒 **Disclaimer:**  
+This tool is for **educational and informational purposes only** and does **not constitute legal advice**.  
+Always consult with a qualified attorney for legal guidance related to your lease or rental situation.
+---
+🔐 **Privacy Notice**  
+We do not store or retain any uploaded lease documents or analysis results. All document processing happens temporarily during your session.  
+Only your email address is saved (to verify free access) — nothing else is collected, tracked, or shared.
+---
+""")
