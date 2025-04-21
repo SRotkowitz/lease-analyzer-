@@ -11,12 +11,10 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 # SheetDB endpoint
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
-# Check if email was already used
 def email_already_used(email):
     response = requests.get(f"{SHEETDB_URL}/search?Email={email}")
     return response.status_code == 200 and len(response.json()) > 0
 
-# Save new email
 def save_email(email):
     data = {"data": [{"Email": email}]}
     try:
@@ -26,14 +24,12 @@ def save_email(email):
     except Exception as e:
         st.error("Error saving email.")
 
-# Generate PDF from analysis text
 def generate_pdf(content, email, role):
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer)
     pdf.setFont("Helvetica", 12)
     pdf.drawString(40, 800, f"NJ Lease Analysis for: {email} ({role})")
     pdf.drawString(40, 785, "-" * 90)
-
     y = 760
     for line in content.split("\n"):
         if y < 50:
@@ -42,7 +38,6 @@ def generate_pdf(content, email, role):
             y = 800
         pdf.drawString(40, y, line)
         y -= 18
-
     pdf.save()
     buffer.seek(0)
     return buffer
@@ -59,17 +54,17 @@ Always consult with a qualified attorney for legal guidance related to your leas
 ---
 """)
 
-# Role selection
+st.sidebar.markdown("📚 **Helpful Resources for NJ Tenants**")
+st.sidebar.markdown("""
+- [NJ Truth-in-Renting Guide (PDF)](https://www.nj.gov/dca/divisions/codes/publications/pdf_lti/truth_in_renting.pdf)
+- [NJ Landlord-Tenant Info Page](https://www.nj.gov/dca/divisions/codes/offices/landlord_tenant_information.html)
+""")
+
 role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"])
-
-# Email required
 email = st.text_input("Enter your email to receive one free analysis (required):")
-
-# Upload lease
 uploaded_file = st.file_uploader("Choose a lease PDF", type="pdf")
 
 if uploaded_file:
-    # Extract text
     pdf_reader = PyPDF2.PdfReader(uploaded_file)
     lease_text = ""
     for page in pdf_reader.pages:
@@ -78,9 +73,7 @@ if uploaded_file:
     st.subheader("Extracted Text:")
     st.text_area("Lease Text", lease_text, height=300)
 
-    # Validate email format
     if email and "@" in email and "." in email:
-        # Check if email already used
         if email_already_used(email):
             st.error("⚠️ This email has already used its free lease analysis. Please upgrade for additional access.")
         else:
@@ -94,6 +87,16 @@ if uploaded_file:
 - Landlord must give 30 days’ notice for rent increases on month-to-month leases.
 - Self-help eviction is illegal in NJ.
 - Security deposit must be returned within 30 days of lease end.
+- Landlord must make repairs within a reasonable time.
+- Lease must clearly state responsibility for utilities.
+- Landlord must give advance notice before entering unit.
+- Lease may not waive tenant's right to a habitable unit or legal process.
+- Lease must outline clear termination and renewal process.
+- Illegal fees or penalties (e.g., admin fees) may not be charged.
+- Security deposit deductions must be itemized and reasonable.
+- Tenants may request receipts for rent payments.
+- Pre-1978 properties must include lead paint disclosure.
+- Evictions must go through the formal NJ court process.
 """
 
                     prompt = f"""
@@ -121,12 +124,11 @@ LEASE TEXT:
 {lease_text}
 """
 
-                    # GPT-4 call
                     response = client.chat.completions.create(
                         model="gpt-4",
                         messages=[{"role": "user", "content": prompt}],
                         temperature=0.2,
-                        max_tokens=600
+                        max_tokens=800
                     )
 
                     result = response.choices[0].message.content
@@ -144,7 +146,6 @@ LEASE TEXT:
 
                     cleaned_result = "\n".join(cleaned_lines)
 
-                # Show analysis + download options
                 if cleaned_result:
                     st.subheader("Analysis:")
                     st.markdown(cleaned_result)
