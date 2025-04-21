@@ -23,4 +23,36 @@ if uploaded_file is not None:
     # Button to run analysis
     if st.button("Analyze Lease"):
         with st.spinner("Analyzing lease using NJ tenant law..."):
-            #
+            # Sample NJ tenant rules
+            nj_rules = """
+- Security deposit must not exceed 1.5 months’ rent.
+- Lease must allow tenant the right to a habitable space.
+- Landlord must give 30 days’ notice for rent increases on month-to-month leases.
+- Self-help eviction is illegal in NJ.
+- Security deposit must be returned within 30 days of lease end.
+"""
+
+            # Create prompt
+            prompt = f"""
+You are a legal assistant trained in New Jersey tenant law.
+Review this lease text and compare it to the NJ rules below.
+List any violations or legal concerns in plain English.
+
+LEASE TEXT:
+{lease_text}
+
+NJ RULES:
+{nj_rules}
+"""
+
+            # OpenAI call
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.2,
+            )
+
+            result = response.choices[0].message["content"]
+
+        st.subheader("Analysis:")
+        st.write(result)
