@@ -48,6 +48,8 @@ Do NOT explain or include references. Just list the issue or compliance in this 
 
 Do not include any titles like "Analysis" in your response. Just start with the first bullet point.
 
+List each item only once. Do not repeat or restate anything. Do not add summaries. Do not end with any extra comments or formatting. Just stop after listing the items.
+
 NJ RULES:
 - Security deposit must not exceed 1.5 months’ rent.
 - Lease must allow tenant the right to a habitable space.
