@@ -7,6 +7,14 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 st.title("NJ Lease Analyzer")
 st.write("Upload a lease PDF to get started.")
+st.markdown("""
+---
+🔒 **Disclaimer:**  
+This tool is for **educational and informational purposes only** and does **not constitute legal advice**.  
+Always consult with a qualified attorney for legal guidance related to your lease or rental situation.
+---
+""")
+
 
 uploaded_file = st.file_uploader("Choose a lease PDF", type="pdf")
 
