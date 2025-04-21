@@ -65,7 +65,8 @@ LEASE TEXT:
             result = response.choices[0].message.content
 
             st.subheader("Analysis:")
-            st.write(result)
+            st.markdown(result)
 
         st.subheader("Analysis:")
-        st.write(result)
+        st.markdown(result)
+
