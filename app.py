@@ -95,6 +95,10 @@ st.markdown("""
 This tool is for **educational and informational purposes only** and does **not constitute legal advice**.  
 Always consult with a qualified attorney for legal guidance related to your lease or rental situation.
 ---
+🔐 **Privacy Notice**  
+We do not store or retain any uploaded lease documents or analysis results. All document processing happens temporarily during your session.  
+Only your email address is saved (to verify free access) — nothing else is collected, tracked, or shared.
+---
 """)
 
 st.sidebar.markdown("📚 **Helpful Resources for NJ Tenants**")
