@@ -7,6 +7,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from textwrap import wrap
 
+st.text("🔑 API Key Found: " + str("OPENAI_API_KEY" in st.secrets))
+
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
