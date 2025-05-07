@@ -1,7 +1,6 @@
 import streamlit as st
 import PyPDF2
 import openai
-from openai.errors import RateLimitError
 import requests
 from io import BytesIO
 from reportlab.pdfgen import canvas
@@ -197,8 +196,8 @@ LEASE TEXT:
                             temperature=0.2,
                             max_tokens=800
                         )
-                    except RateLimitError:
-                        st.error("🚫 Too many requests. Please wait and try again shortly.")
+                    except openai.error.OpenAIError:
+                        st.error("🚫 Error connecting to OpenAI. Please try again shortly.")
                         st.stop()
 
                     result = response.choices[0].message.content
