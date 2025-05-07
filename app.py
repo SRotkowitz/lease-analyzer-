@@ -1,25 +1,14 @@
 import streamlit as st
 import PyPDF2
-import openai
 import requests
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from textwrap import wrap
+from openai import OpenAI
 
-# 🔧 TEMP: Hardcoded key for debug
-openai.api_key = "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"  # Replace this with your real key
-
-# ✅ TEST OpenAI connection
-try:
-    test_response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "Test"}]
-    )
-    st.success("✅ GPT is working: " + test_response.choices[0].message.content)
-except Exception as e:
-    st.error("❌ GPT test failed: " + str(e))
-
+# Use API key securely from Streamlit secrets
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
 def email_already_used(email):
@@ -87,25 +76,22 @@ if uploaded_file:
             if st.button("Analyze Lease"):
                 save_email(email)
                 with st.spinner("Analyzing lease..."):
+
                     rules = {
                         "New Jersey": "- Max 1.5 months deposit\n- 30 days notice for rent changes\n- Must return deposit in 30 days\n- Entry requires notice\n- Habitable condition required",
                         "Pennsylvania": "- Max 2 months deposit (year 1)\n- Return deposit in 30 days with itemization\n- Must maintain safe conditions\n- Entry notice required\n- Self-help eviction illegal"
                     }
 
-                    prompt = f"""
-You are a legal assistant trained in {state} tenant law.
-The user is a {role.lower()}.
-Please list any potential issues or compliant terms.
-
-Rules to check:
-{rules[state]}
-
-LEASE TEXT:
-{lease_text}
-"""
+                    prompt = (
+                        f"You are a legal assistant trained in {state} tenant law.\n"
+                        f"The user is a {role.lower()}.\n"
+                        f"Please list any potential issues or compliant terms.\n\n"
+                        f"Rules to check:\n{rules[state]}\n\n"
+                        f"LEASE TEXT:\n{lease_text}"
+                    )
 
                     try:
-                        response = openai.ChatCompletion.create(
+                        response = client.chat.completions.create(
                             model="gpt-3.5-turbo",
                             messages=[{"role": "user", "content": prompt}],
                             temperature=0.2,
@@ -115,7 +101,10 @@ LEASE TEXT:
                         st.subheader("Analysis")
                         st.markdown(analysis)
 
-                        full_text = "Disclaimer: This lease analysis is for educational use only.\n\n" + analysis
+                        full_text = (
+                            "Disclaimer: This lease analysis is for educational use only.\n\n" + analysis
+                        )
+
                         st.download_button("📥 Download as Text", data=full_text, file_name="lease_analysis.txt")
                         st.download_button("📄 Download as PDF", data=generate_pdf(analysis, email, role, state), file_name="lease_analysis.pdf", mime="application/pdf")
 
