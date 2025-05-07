@@ -8,7 +8,7 @@ from reportlab.lib.pagesizes import letter
 from textwrap import wrap
 
 # 🔧 TEMP: Hardcoded key for debug
-openai.api_key = "sk-your-api-key-here"  # Replace this with your real key
+openai.api_key = "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"  # Replace this with your real key
 
 # ✅ TEST OpenAI connection
 try:
