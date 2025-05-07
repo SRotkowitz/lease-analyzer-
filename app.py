@@ -9,7 +9,7 @@ from textwrap import wrap
 
 st.text("🔑 API Key Found: " + str("OPENAI_API_KEY" in st.secrets))
 
-openai.api_key = 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
+openai.api_key = "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"
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
 def email_already_used(email):
