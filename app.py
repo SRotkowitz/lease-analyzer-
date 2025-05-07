@@ -1,7 +1,7 @@
 import streamlit as st
 import PyPDF2
 import openai
-from openai.error import RateLimitError
+from openai.errors import RateLimitError
 import requests
 from io import BytesIO
 from reportlab.pdfgen import canvas
