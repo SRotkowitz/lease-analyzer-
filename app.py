@@ -197,8 +197,8 @@ LEASE TEXT:
                             max_tokens=800
                         )
                     except Exception:
-                    st.error("🚫 Unexpected error contacting OpenAI. Please try again later.")
-                    st.stop()
+                        st.error("🚫 Unexpected error contacting OpenAI. Please try again later.")
+                        st.stop()
 
 
                     result = response.choices[0].message.content
