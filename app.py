@@ -7,21 +7,33 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from textwrap import wrap
 
-st.text("🔑 API Key Found: " + str("OPENAI_API_KEY" in st.secrets))
+# 🔧 TEMP: Hardcoded key for debug
+openai.api_key = "sk-your-api-key-here"  # Replace this with your real key
 
-openai.api_key = "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"
+# ✅ TEST OpenAI connection
+try:
+    test_response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": "Test"}]
+    )
+    st.success("✅ GPT is working: " + test_response.choices[0].message.content)
+except Exception as e:
+    st.error("❌ GPT test failed: " + str(e))
+
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
 def email_already_used(email):
-    response = requests.get(f"{SHEETDB_URL}/search?Email={email}")
-    return response.status_code == 200 and len(response.json()) > 0
+    try:
+        response = requests.get(f"{SHEETDB_URL}/search?Email={email}")
+        return response.status_code == 200 and len(response.json()) > 0
+    except:
+        return False
 
 def save_email(email):
-    data = {"data": [{"Email": email}]}
     try:
-        response = requests.post(SHEETDB_URL, json=data)
-    except Exception:
-        st.warning("Could not save email to database.")
+        requests.post(SHEETDB_URL, json={"data": [{"Email": email}]})
+    except:
+        pass
 
 def generate_pdf(content, email, role, state):
     buffer = BytesIO()
@@ -32,17 +44,15 @@ def generate_pdf(content, email, role, state):
 
     disclaimer = (
         "Disclaimer: This lease analysis is for educational and informational purposes only and "
-        "does not constitute legal advice. Always consult with a qualified attorney for legal guidance."
+        "does not constitute legal advice. Always consult with a qualified attorney."
     )
 
     pdf.setFont("Helvetica", 10)
     pdf.drawString(x_margin, y, f"{state} Lease Analysis for: {email} ({role})")
     y -= 20
-
     for line in wrap(disclaimer, 95):
         pdf.drawString(x_margin, y, line)
         y -= 12
-
     y -= 20
     for line in content.split("\n"):
         for wrapped in wrap(line, 95):
@@ -57,24 +67,12 @@ def generate_pdf(content, email, role, state):
     buffer.seek(0)
     return buffer
 
-# App Start
+# Streamlit App
 st.title("Lease Analyzer")
 state = st.selectbox("Which state is this lease for?", ["New Jersey", "Pennsylvania"])
 role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"])
 email = st.text_input("Enter your email to receive one free analysis (required):")
 uploaded_file = st.file_uploader("Choose a lease PDF", type="pdf")
-
-st.sidebar.markdown("📚 **Helpful Resources**")
-if state == "New Jersey":
-    st.sidebar.markdown("""
-- [NJ Truth-in-Renting Guide](https://www.nj.gov/dca/divisions/codes/publications/pdf_lti/truth_in_renting.pdf)
-- [NJ Tenant Info](https://www.nj.gov/dca/divisions/codes/offices/landlord_tenant_information.html)
-""")
-else:
-    st.sidebar.markdown("""
-- [PA Tenant Rights Guide](https://www.attorneygeneral.gov/wp-content/uploads/2018/01/Tenant_Rights.pdf)
-- [PA Legal Aid](https://www.palawhelp.org/issues/housing/landlord-and-tenant-law)
-""")
 
 if uploaded_file:
     pdf_reader = PyPDF2.PdfReader(uploaded_file)
@@ -89,83 +87,39 @@ if uploaded_file:
             if st.button("Analyze Lease"):
                 save_email(email)
                 with st.spinner("Analyzing lease..."):
-
                     rules = {
-                        "New Jersey": """
-- Security deposit must not exceed 1.5 months' rent.
-- Lease must allow tenant the right to a habitable space.
-- 30 days' notice required for rent increase.
-- Self-help eviction is illegal.
-- Deposit must be returned in 30 days.
-- Repairs must be made timely.
-- Utilities responsibility must be clear.
-- Entry notice required.
-- Illegal to waive habitability or legal process.
-- Lease must clarify renewal or termination.
-""",
-                        "Pennsylvania": """
-- Max 2 months' deposit in year one.
-- Deposit returned in 30 days w/ itemization.
-- Habitable condition is required.
-- Landlord must maintain common areas.
-- Pre-1978: lead paint disclosure required.
-- Entry with notice unless emergency.
-- No self-help eviction allowed.
-- Lease must explain termination rules.
-"""
+                        "New Jersey": "- Max 1.5 months deposit\n- 30 days notice for rent changes\n- Must return deposit in 30 days\n- Entry requires notice\n- Habitable condition required",
+                        "Pennsylvania": "- Max 2 months deposit (year 1)\n- Return deposit in 30 days with itemization\n- Must maintain safe conditions\n- Entry notice required\n- Self-help eviction illegal"
                     }
 
                     prompt = f"""
 You are a legal assistant trained in {state} tenant law.
-The user reviewing this lease is a {role.lower()}.
-Your job is to review the lease and list only the issues found OR items that comply.
+The user is a {role.lower()}.
+Please list any potential issues or compliant terms.
 
-Use this format:
-- ⚠️ Potential Issue: ...
-- ✅ Compliant: ...
-
+Rules to check:
 {rules[state]}
+
 LEASE TEXT:
 {lease_text}
 """
 
                     try:
-                        st.info("📡 Sending request to OpenAI...")
                         response = openai.ChatCompletion.create(
                             model="gpt-3.5-turbo",
                             messages=[{"role": "user", "content": prompt}],
                             temperature=0.2,
                             max_tokens=800
                         )
-                        st.success("✅ OpenAI responded.")
-                    except Exception:
-                        st.error("🚫 Unexpected error contacting OpenAI. Please try again later.")
-                        st.stop()
+                        analysis = response.choices[0].message.content.strip()
+                        st.subheader("Analysis")
+                        st.markdown(analysis)
 
-                    result = response.choices[0].message.content.strip()
-                    lines = list(dict.fromkeys([line.strip() for line in result.split("\n") if line.strip()]))
-                    cleaned_result = "\n".join(lines)
+                        full_text = "Disclaimer: This lease analysis is for educational use only.\n\n" + analysis
+                        st.download_button("📥 Download as Text", data=full_text, file_name="lease_analysis.txt")
+                        st.download_button("📄 Download as PDF", data=generate_pdf(analysis, email, role, state), file_name="lease_analysis.pdf", mime="application/pdf")
 
-                    st.subheader("Analysis:")
-                    st.markdown(cleaned_result)
+                    except Exception as e:
+                        st.error("❌ GPT request failed: " + str(e))
 
-                    full_txt = (
-                        "Disclaimer: This lease analysis is for educational and informational purposes only and "
-                        "does not constitute legal advice.\n\n" + cleaned_result
-                    )
-
-                    st.download_button("📥 Download as Text", data=full_txt, file_name="lease_analysis.txt")
-                    st.download_button("📄 Download as PDF", data=generate_pdf(cleaned_result, email, role, state),
-                                       file_name="lease_analysis.pdf", mime="application/pdf")
-
-# Footer
-st.markdown("""
----
-🔒 **Disclaimer**  
-This tool is for educational and informational purposes only and does not constitute legal advice.  
-Always consult with a qualified attorney.
-
-🔐 **Privacy Notice**  
-We do not store lease documents or analysis results. Only your email is saved to verify access.
----
-""")
+st.markdown("---\n🔒 **Privacy Note:** We only save your email to verify access. No files or analysis are stored.\n---")
