@@ -196,9 +196,10 @@ LEASE TEXT:
                             temperature=0.2,
                             max_tokens=800
                         )
-                    except openai.error.OpenAIError:
-                        st.error("🚫 Error connecting to OpenAI. Please try again shortly.")
-                        st.stop()
+                    except Exception:
+                    st.error("🚫 Unexpected error contacting OpenAI. Please try again later.")
+                    st.stop()
+
 
                     result = response.choices[0].message.content
                     lines = result.strip().split("\n")
