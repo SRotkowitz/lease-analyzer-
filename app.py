@@ -1,6 +1,7 @@
 import streamlit as st
 import PyPDF2
-from openai import OpenAI, RateLimitError
+import openai
+from openai.error import RateLimitError
 import requests
 from io import BytesIO
 from reportlab.pdfgen import canvas
@@ -8,7 +9,9 @@ from reportlab.lib.pagesizes import letter
 from textwrap import wrap
 import time
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# Set OpenAI API key
+openai.api_key = st.secrets["OPENAI_API_KEY"]
+
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
 def email_already_used(email):
@@ -187,9 +190,8 @@ LEASE TEXT:
 {lease_text}
 """
 
-                    # Handle rate limit errors gracefully
                     try:
-                        response = client.chat.completions.create(
+                        response = openai.ChatCompletion.create(
                             model="gpt-4",
                             messages=[{"role": "user", "content": prompt}],
                             temperature=0.2,
@@ -203,7 +205,6 @@ LEASE TEXT:
                     lines = result.strip().split("\n")
                     seen = set()
                     cleaned_lines = [line for line in lines if line.strip() and not (line in seen or seen.add(line))]
-
                     cleaned_result = "\n".join(cleaned_lines)
 
                 if cleaned_result:
@@ -232,7 +233,6 @@ LEASE TEXT:
                         mime="application/pdf"
                     )
 
-# Footer disclaimer
 st.markdown("""
 ---
 🔒 **Disclaimer**  
