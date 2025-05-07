@@ -1,11 +1,12 @@
 import streamlit as st
 import PyPDF2
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 import requests
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from textwrap import wrap
+import time
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
@@ -17,9 +18,11 @@ def email_already_used(email):
 def save_email(email):
     data = {"data": [{"Email": email}]}
     try:
-        requests.post(SHEETDB_URL, json=data)
-    except:
-        pass
+        response = requests.post(SHEETDB_URL, json=data)
+        if response.status_code != 201:
+            st.warning("Something went wrong saving your email.")
+    except Exception as e:
+        st.error("Error saving email.")
 
 def generate_pdf(content, email, role, state):
     buffer = BytesIO()
@@ -42,8 +45,8 @@ def generate_pdf(content, email, role, state):
         ],
         "Pennsylvania": [
             "Resources:",
-            "- PA Tenants' Rights Guide: https://www.phfa.org/forms/housing_services/tenants-rights.pdf",
-            "- PA Housing Resources: https://www.attorneygeneral.gov/protect-yourself/landlord-tenant-rights/"
+            "- PA Tenant Guide: https://www.attorneygeneral.gov/wp-content/uploads/2018/01/Tenant_Rights.pdf",
+            "- PA Legal Aid: https://www.palawhelp.org/issues/housing/landlord-and-tenant-law"
         ]
     }
 
@@ -51,8 +54,9 @@ def generate_pdf(content, email, role, state):
     pdf.drawString(x_margin, y, f"{state} Lease Analysis for: {email} ({role})")
     y -= 15
 
-    for line in wrap(disclaimer, 95):
-        pdf.setFont("Helvetica-Oblique", 8)
+    wrapped_disclaimer = wrap(disclaimer, 95)
+    pdf.setFont("Helvetica-Oblique", 8)
+    for line in wrapped_disclaimer:
         pdf.drawString(x_margin, y, line)
         y -= 12
 
@@ -63,7 +67,8 @@ def generate_pdf(content, email, role, state):
 
     pdf.setFont("Helvetica", 10)
     for line in content.split("\n"):
-        for wrapped_line in wrap(line, 95):
+        wrapped_lines = wrap(line, 95)
+        for wrapped_line in wrapped_lines:
             if y < 50:
                 pdf.showPage()
                 y = height - 40
@@ -89,30 +94,30 @@ def generate_pdf(content, email, role, state):
 st.title("Lease Analyzer")
 st.write("Upload a lease PDF to get started.")
 
-# STATE SELECTOR
-state = st.selectbox("Which state is this lease from?", ["New Jersey", "Pennsylvania"])
+state = st.selectbox("Which state is this lease for?", ["New Jersey", "Pennsylvania"])
+
+st.sidebar.markdown("📚 **Helpful Resources**")
+if state == "New Jersey":
+    st.sidebar.markdown("""
+- [NJ Truth-in-Renting Guide (PDF)](https://www.nj.gov/dca/divisions/codes/publications/pdf_lti/truth_in_renting.pdf)
+- [NJ Landlord-Tenant Info Page](https://www.nj.gov/dca/divisions/codes/offices/landlord_tenant_information.html)
+""")
+else:
+    st.sidebar.markdown("""
+- [PA Tenant Guide](https://www.attorneygeneral.gov/wp-content/uploads/2018/01/Tenant_Rights.pdf)
+- [PA Legal Aid Housing](https://www.palawhelp.org/issues/housing/landlord-and-tenant-law)
+""")
+
 role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"])
 email = st.text_input("Enter your email to receive one free analysis (required):")
 uploaded_file = st.file_uploader("Choose a lease PDF", type="pdf")
 
-# SIDEBAR LINKS
-if state == "New Jersey":
-    st.sidebar.markdown("📚 **NJ Tenant Resources**")
-    st.sidebar.markdown("""
-    - [Truth-in-Renting Guide (PDF)](https://www.nj.gov/dca/divisions/codes/publications/pdf_lti/truth_in_renting.pdf)
-    - [Landlord-Tenant Info Page](https://www.nj.gov/dca/divisions/codes/offices/landlord_tenant_information.html)
-    """)
-else:
-    st.sidebar.markdown("📚 **PA Tenant Resources**")
-    st.sidebar.markdown("""
-    - [Tenants' Rights Guide (PDF)](https://www.phfa.org/forms/housing_services/tenants-rights.pdf)
-    - [PA AG Housing Info](https://www.attorneygeneral.gov/protect-yourself/landlord-tenant-rights/)
-    """)
-
-# DISPLAY EXTRACTED LEASE TEXT
 if uploaded_file:
     pdf_reader = PyPDF2.PdfReader(uploaded_file)
-    lease_text = "".join([page.extract_text() or "" for page in pdf_reader.pages])
+    lease_text = ""
+    for page in pdf_reader.pages:
+        lease_text += page.extract_text() or ""
+
     st.subheader("Extracted Text:")
     st.text_area("Lease Text", lease_text, height=300)
 
@@ -125,8 +130,8 @@ if uploaded_file:
 
                 with st.spinner("Analyzing lease..."):
 
-                    # RULE SETS
-                    nj_rules = """
+                    rules = {
+                        "New Jersey": """
 - Security deposit must not exceed 1.5 months’ rent.
 - Lease must allow tenant the right to a habitable space.
 - Landlord must give 30 days’ notice for rent increases on month-to-month leases.
@@ -142,76 +147,92 @@ if uploaded_file:
 - Tenants may request receipts for rent payments.
 - Pre-1978 properties must include lead paint disclosure.
 - Evictions must go through the formal NJ court process.
+""",
+                        "Pennsylvania": """
+- Security deposit cannot exceed 2 months’ rent in first year.
+- Deposit must be returned within 30 days of lease end with itemized list of deductions.
+- Lease must ensure habitability of the rental unit.
+- Landlord must make timely repairs and maintain common areas.
+- Landlord must disclose lead paint risk for buildings built before 1978.
+- Utilities and maintenance responsibilities must be clearly assigned.
+- Entry requires reasonable notice unless emergency.
+- Self-help eviction is illegal; court process is required.
+- Lease must explain renewal or termination procedures.
+- Fees and penalties must be legal and clearly listed.
+- Tenants have the right to withhold rent in certain conditions (escrow).
+- Landlords may be required to register with local municipalities.
+- Late fees must be reasonable and non-punitive.
+- Tenants can sue for wrongful eviction or unreturned deposits.
+- Lease clauses must not waive legal tenant protections.
 """
+                    }
 
-                    pa_rules = """
-- Security deposit must not exceed 2 months’ rent in the first year.
-- Deposit must be returned within 30 days after move-out with itemized deductions.
-- Lease must clearly define responsibilities for utilities and maintenance.
-- Evictions must follow proper legal proceedings.
-- Lead-based paint disclosure is required for pre-1978 housing.
-- Lease cannot waive basic habitability rights.
-- Landlord must provide notice before entering the property.
-- Lease should include renewal and termination clauses.
-- Illegal fees (e.g., excessive late fees) are prohibited.
-- Lease must not include retaliatory clauses.
-"""
-
-                    rules = nj_rules if state == "New Jersey" else pa_rules
-
-                    # GPT PROMPT
                     prompt = f"""
-You are a legal assistant trained in {state} landlord-tenant law.
+You are a legal assistant trained in {state} tenant law.
+
 The user reviewing this lease is a {role.lower()}.
 
-Your task is to review the lease text and identify whether it complies with the {state} rules below.
+Your task is to review the lease text and identify whether it complies with the {state} tenant rules below.
 
 Return the output using this format:
 
 - ⚠️ **Potential Issue:** [short description]
 - ✅ **Compliant:** [short description]
 
-Only list each item once. Do not include explanations, summaries, or legal citations.
+Only list each item once. Do not include summaries or explanations.
 
-{state.upper()} RULES:
-{rules}
+{rules[state]}
 
 LEASE TEXT:
 {lease_text}
 """
 
-                    # GPT CALL
-                    response = client.chat.completions.create(
-                        model="gpt-4",
-                        messages=[{"role": "user", "content": prompt}],
-                        temperature=0.2,
-                        max_tokens=800
-                    )
+                    # Handle rate limit errors gracefully
+                    try:
+                        response = client.chat.completions.create(
+                            model="gpt-4",
+                            messages=[{"role": "user", "content": prompt}],
+                            temperature=0.2,
+                            max_tokens=800
+                        )
+                    except RateLimitError:
+                        st.error("🚫 Too many requests. Please wait and try again shortly.")
+                        st.stop()
 
                     result = response.choices[0].message.content
-
-                    # DEDUPLICATE LINES
                     lines = result.strip().split("\n")
                     seen = set()
                     cleaned_lines = [line for line in lines if line.strip() and not (line in seen or seen.add(line))]
+
                     cleaned_result = "\n".join(cleaned_lines)
 
-                # DISPLAY RESULTS + DOWNLOAD OPTIONS
-                st.subheader("Analysis:")
-                st.markdown(cleaned_result)
+                if cleaned_result:
+                    st.subheader("Analysis:")
+                    st.markdown(cleaned_result)
 
-                disclaimer = (
-                    "Disclaimer: This lease analysis is for educational and informational purposes only and "
-                    "does not constitute legal advice. Always consult with a qualified attorney for legal guidance "
-                    "regarding your specific situation.\n\n"
-                )
+                    disclaimer = (
+                        "Disclaimer: This lease analysis is for educational and informational purposes only and "
+                        "does not constitute legal advice. Always consult with a qualified attorney for legal guidance "
+                        "regarding your specific situation.\n\n"
+                    )
+                    final_text = disclaimer + cleaned_result
 
-                final_text = disclaimer + cleaned_result
+                    st.download_button(
+                        label="📥 Download as Text",
+                        data=final_text,
+                        file_name="lease_analysis.txt",
+                        mime="text/plain"
+                    )
 
-                st.download_button("📥 Download as Text", data=final_text, file_name="lease_analysis.txt", mime="text/plain")
-                st.download_button("📄 Download as PDF", data=generate_pdf(cleaned_result, email, role, state), file_name="lease_analysis.pdf", mime="application/pdf")
+                    pdf_data = generate_pdf(cleaned_result, email, role, state)
+                    st.download_button(
+                        label="📄 Download as PDF",
+                        data=pdf_data,
+                        file_name="lease_analysis.pdf",
+                        mime="application/pdf"
+                    )
 
-# FOOTER
+# Footer disclaimer
 st.markdown("""
 ---
 🔒 **Disclaimer**  
@@ -219,7 +240,7 @@ This tool is for **educational and informational purposes only** and does **not 
 Always consult with a qualified attorney for legal guidance related to your lease or rental situation.
 
 🔐 **Privacy Notice**  
-We do not store or retain any uploaded lease documents or analysis results. All processing happens temporarily during your session.  
-Only your email address is saved (to verify free access) — nothing else is tracked or stored.
+We do not store or retain any uploaded lease documents or analysis results. All document processing happens temporarily during your session.  
+Only your email address is saved (to verify free access) — nothing else is collected, tracked, or shared.
 ---
 """)
