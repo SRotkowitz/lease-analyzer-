@@ -188,7 +188,8 @@ Only list each item once. Do not include summaries or explanations.
 LEASE TEXT:
 {lease_text}
 """
-
+st.info("📡 Sending request to OpenAI...")
+                    
                     try:
                         response = openai.ChatCompletion.create(
                             model="gpt-4",
@@ -196,6 +197,7 @@ LEASE TEXT:
                             temperature=0.2,
                             max_tokens=800
                         )
+                        st.success("✅ OpenAI responded.")
                     except Exception:
                         st.error("🚫 Unexpected error contacting OpenAI. Please try again later.")
                         st.stop()
