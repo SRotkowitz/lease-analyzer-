@@ -186,25 +186,34 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-if uploaded_file and email:
-    if "@" in email and "." in email:
+valid_email = email and "@" in email and "." in email
+can_analyze = uploaded_file is not None and valid_email
+
+if email and not valid_email:
+    st.warning("Please enter a valid email address.")
+
+if uploaded_file:
+    lease_text = ""
+    for page in PyPDF2.PdfReader(uploaded_file).pages:
+        lease_text += page.extract_text() or ""
+    st.subheader("📄 Extracted Lease Text")
+    st.text_area("Lease Text", lease_text, height=300)
+
+    st.markdown('<div class="analyze-button">', unsafe_allow_html=True)
+    analyze_clicked = st.button("Analyze Lease", disabled=not can_analyze)
+
+    if analyze_clicked:
         if email_already_used(email):
             st.error("⚠️ This email has already used its free lease analysis.")
         else:
-            lease_text = ""
-            for page in PyPDF2.PdfReader(uploaded_file).pages:
-                lease_text += page.extract_text() or ""
-            st.subheader("📄 Extracted Lease Text")
-            st.text_area("Lease Text", lease_text, height=300)
+            save_email(email)
+            with st.spinner("Analyzing lease..."):
+                rules = {
+                    "New Jersey": """...""",
+                    "Pennsylvania": """..."""
+                }
+                prompt = f"""  # your existing GPT prompt block continues here
 
-            if st.button("Analyze Lease"):
-                save_email(email)
-                with st.spinner("Analyzing lease..."):
-                    rules = {
-                        "New Jersey": """...""",
-                        "Pennsylvania": """..."""
-                    }
-                    prompt = f"""
 You are a legal assistant trained in {state} tenant law.
 The user reviewing this lease is a {role.lower()}.
 Your task is to review the lease text and identify whether it complies with the {state} tenant rules below.
