@@ -108,7 +108,7 @@ def generate_pdf(content, email, role, state):
     return buffer
 
 # Header & UI
-st.markdown("<h1 style='text-align:center;'>📄 NJ/PA Lease Risk Checker</h1>", unsafe_allow_html=True)
+
 st.markdown("Upload your lease. Our AI checks for legal red flags — fast, free, and private.")
 
 # Optional: Try a sample lease for preview
