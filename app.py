@@ -4,31 +4,22 @@ import PyPDF2
 from openai import OpenAI, RateLimitError
 import requests
 from io import BytesIO
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from textwrap import wrap
-import time
 from PIL import Image
 
-st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="centered")
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
 
+# Page config and banner
+st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="centered")
 banner = Image.open("banner.png")
 st.image(banner, use_container_width=True)
 st.markdown("<div style='margin-top: -10px'></div>", unsafe_allow_html=True)
 
-def log_sample_click():
-    data = {"data": [{"Email": "sample_demo_click"}]}
-    try:
-        response = requests.post(SHEETDB_URL, json=data)
-
-        # Check if the response was successful
-        if response.status_code != 201:
-            st.error(f"❌ SheetDB Error: {response.status_code} — {response.text}")
-        else:
-            st.success("✅ Sample click logged successfully.")
-    except Exception as e:
-        st.error(f"❌ Exception during SheetDB POST: {e}")
-
+# API and SheetDB setup
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
@@ -47,47 +38,12 @@ def log_sample_click():
     data = {"data": [{"Email": "sample_demo_click"}]}
     try:
         response = requests.post(SHEETDB_URL, json=data)
-
         if response.status_code != 201:
             st.error(f"❌ SheetDB Error: {response.status_code} — {response.text}")
-        else:
-            st.success("✅ Sample click logged successfully.")
     except Exception as e:
         st.error(f"❌ Exception during SheetDB POST: {e}")
 
 def generate_pdf(content, email, role, state):
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-    from reportlab.lib.enums import TA_LEFT
-    from reportlab.lib.units import inch
-    from io import BytesIO
-
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
-
-    styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="TitleStyle", fontSize=16, leading=20, alignment=TA_LEFT))
-
-    elements = []
-    elements.append(Paragraph("Test PDF Content", styles["TitleStyle"]))
-
-    doc.build(elements)
-    buffer.seek(0)
-    return buffer  # ✅ Must be indented inside the function
-
-
-# ✅ Now outside the function, start your UI block
-with st.container():
-    if st.button("🔍 Try a Sample Lease"):
-        log_sample_click()
-        st.markdown("### 🧾 Sample Lease Compliance Report")
-        st.markdown("""
-#### ⚠️ Potential Issues
-- ⚠️ **Late Fee**: Lease allows charging an unspecified late fee — this may violate NJ limits.
-...
-        """)
-
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=60, bottomMargin=40)
 
@@ -100,18 +56,11 @@ with st.container():
     styles.add(ParagraphStyle(name="GoodText", fontSize=10, backColor=colors.HexColor("#D4EDDA"), textColor=colors.HexColor("#155724"), spaceBefore=6, spaceAfter=4))
 
     elements = []
-
-    # Title and subtitle
     elements.append(Paragraph("Lease Analysis Report", styles["TitleStyle"]))
     elements.append(Paragraph(f"State Analyzed: {state}", styles["SubTitleStyle"]))
     elements.append(Paragraph(f"For: {email} ({role})", styles["NormalText"]))
     elements.append(Spacer(1, 6))
 
-    disclaimer = "Disclaimer: This lease analysis is for educational and informational purposes only and does not constitute legal advice. Always consult with a qualified attorney."
-    elements.append(Paragraph(disclaimer, styles["NormalText"]))
-    elements.append(Spacer(1, 12))
-
-    # Parse results
     lines = content.strip().split("\n")
     issues = [line for line in lines if line.startswith("- ⚠️")]
     compliant = [line for line in lines if line.startswith("- ✅")]
@@ -127,7 +76,6 @@ with st.container():
         for line in compliant:
             elements.append(Paragraph(line.replace("- ✅", "✅"), styles["GoodText"]))
 
-    # Resources section
     resources = {
         "New Jersey": [
             "Resources:",
@@ -145,8 +93,7 @@ with st.container():
     elements.append(Paragraph("Helpful Resources", styles["SectionHeader"]))
     for res in resources[state]:
         elements.append(Paragraph(res, styles["NormalText"]))
-    
-    # Add spacing and footer
+
     elements.append(Spacer(1, 24))
     elements.append(Paragraph("Disclaimer", styles["SectionHeader"]))
     elements.append(Paragraph(
@@ -154,7 +101,6 @@ with st.container():
         "Always consult with a qualified attorney regarding your specific situation.",
         styles["NormalText"]
     ))
-    
     elements.append(Spacer(1, 12))
     elements.append(Paragraph("Privacy Notice", styles["SectionHeader"]))
     elements.append(Paragraph(
@@ -167,6 +113,27 @@ with st.container():
     buffer.seek(0)
     return buffer
 
+# Sample Lease UI
+with st.container():
+    if st.button("🔍 Try a Sample Lease"):
+        log_sample_click()
+        st.markdown("### 🧾 Sample Lease Compliance Report")
+        st.markdown("""
+#### ⚠️ Potential Issues
+- ⚠️ **Late Fee**: Lease allows charging an unspecified late fee — this may violate NJ limits.
+- ⚠️ **Entry Notice**: Landlord entry clause lacks notice requirements.
+- ⚠️ **Repair Language**: Lease says tenant must fix "all issues," which may be too broad under NJ law.
+
+#### ✅ Compliant Clauses
+- ✅ **Security Deposit**: Clearly limited to 1.5 months' rent.
+- ✅ **Lead Paint Disclosure**: Clause included for pre-1978 properties.
+- ✅ **Termination Clause**: Lease states 30-day notice for ending tenancy.
+
+---
+This sample analysis was generated using the same AI rules applied to real leases.
+        """)
+
+# Sidebar Resources
 with st.sidebar:
     st.markdown("📚 **Helpful Resources**")
     state_preview = st.session_state.get("state_select", "New Jersey")
@@ -177,56 +144,11 @@ with st.sidebar:
         st.markdown("- [PA Tenant Rights Guide](https://www.attorneygeneral.gov/wp-content/uploads/2018/01/Tenant_Rights.pdf)")
         st.markdown("- [PA Legal Aid Housing](https://www.palawhelp.org/issues/housing/landlord-and-tenant-law)")
 
-st.markdown("""
-<div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9">
-<h4>Step 1: Select Your State and Role</h4>
-</div>
-""", unsafe_allow_html=True)
-col1, col2 = st.columns(2)
-with col1:
-    state = st.selectbox("Which state is this lease for?", ["New Jersey", "Pennsylvania"], key="state_select")
-with col2:
-    role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"], key="role_radio")
-
-st.markdown("""
-<div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9; margin-top: 20px">
-<h4>Step 2: Upload Lease and Enter Email</h4>
-</div>
-""", unsafe_allow_html=True)
-col3, col4 = st.columns([3, 2])
-with col3:
-    uploaded_file = st.file_uploader("Upload Lease (PDF only)", type="pdf", key="lease_upload")
-with col4:
-    email = st.text_input("Your Email (to receive report):", key="email_input")
-
-st.markdown("""
-<div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9; margin-top: 20px">
-<h4>Step 3: Try a Sample Analysis (Optional)</h4>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<style>
-.sample-button button {
-    border: 2px double #FFD700;
-    background-color: #FFFFE0;
-    color: black;
-    font-weight: bold;
-    width: 100%;
-    padding: 0.5em 1em;
-    border-radius: 8px;
-}
-.analyze-button button {
-    border: 2px double #006400;
-    background-color: #DFFFD6;
-    color: black;
-    font-weight: bold;
-    width: 100%;
-    padding: 0.5em 1em;
-    border-radius: 8px;
-}
-</style>
-""", unsafe_allow_html=True)
+# Lease Analyzer Input UI
+state = st.selectbox("Which state is this lease for?", ["New Jersey", "Pennsylvania"], key="state_select")
+role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"], key="role_radio")
+uploaded_file = st.file_uploader("Upload Lease (PDF only)", type="pdf", key="lease_upload")
+email = st.text_input("Your Email (to receive report):", key="email_input")
 
 valid_email = email and "@" in email and "." in email
 can_analyze = uploaded_file is not None and valid_email
@@ -241,18 +163,15 @@ if uploaded_file:
     st.subheader("📄 Extracted Lease Text")
     st.text_area("Lease Text", lease_text, height=300)
 
-    st.markdown('<div class="analyze-button">', unsafe_allow_html=True)
-    analyze_clicked = st.button("Analyze Lease", disabled=not can_analyze)
-
-    if analyze_clicked:
+    if st.button("Analyze Lease", disabled=not can_analyze):
         if email_already_used(email):
             st.error("⚠️ This email has already used its free lease analysis.")
         else:
             save_email(email)
             with st.spinner("Analyzing lease..."):
                 rules = {
-                    "New Jersey": """...""",
-                    "Pennsylvania": """..."""
+                    "New Jersey": "- NJ Rule 1\n- NJ Rule 2",
+                    "Pennsylvania": "- PA Rule 1\n- PA Rule 2"
                 }
                 prompt = f"""
 You are a legal assistant trained in {state} tenant law.
@@ -286,7 +205,7 @@ LEASE TEXT:
                 except RateLimitError:
                     st.error("🚫 Too many requests. Please wait and try again.")
 
-# This is the very last line in app.py
+# Styled Web Disclaimer
 st.markdown("""
 <div style="margin-top: 40px; padding: 20px; border-top: 2px solid #ccc;">
   <h4 style="color: #003366;">🔒 Disclaimer</h4>
