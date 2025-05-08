@@ -97,6 +97,24 @@ def generate_pdf(content, email, role, state):
 st.markdown("<h1 style='text-align:center;'>📄 NJ/PA Lease Risk Checker</h1>", unsafe_allow_html=True)
 st.markdown("Upload your lease. Our AI checks for legal red flags — fast, free, and private.")
 
+# Optional: Try a sample lease for preview
+if st.button("🔍 Try a Sample Lease"):
+    st.markdown("### 🧾 Sample Lease Compliance Report")
+    st.markdown("""
+#### ⚠️ Potential Issues
+- **⚠️ Late Fee**: Lease allows charging an unspecified late fee — this may violate NJ limits.
+- **⚠️ Entry Notice**: Landlord entry clause lacks notice requirements.
+- **⚠️ Repair Language**: Lease says tenant must fix "all issues," which may be too broad under NJ law.
+
+#### ✅ Compliant Clauses
+- **✅ Security Deposit**: Clearly limited to 1.5 months' rent.
+- **✅ Lead Paint Disclosure**: Clause included for pre-1978 properties.
+- **✅ Termination Clause**: Lease states 30-day notice for ending tenancy.
+
+---
+This sample analysis was generated using the same AI rules applied to real leases.
+    """)
+
 st.markdown("## Step 1: Choose Your State and Role")
 col1, col2 = st.columns(2)
 with col1:
