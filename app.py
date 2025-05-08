@@ -58,11 +58,26 @@ def log_sample_click():
 def generate_pdf(content, email, role, state):
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     from reportlab.lib.enums import TA_LEFT
     from reportlab.lib.units import inch
     from io import BytesIO
 
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name="TitleStyle", fontSize=16, leading=20, alignment=TA_LEFT))
+
+    elements = []
+    elements.append(Paragraph("Test PDF Content", styles["TitleStyle"]))
+
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer  # ✅ Must be indented inside the function
+
+
+# ✅ Now outside the function, start your UI block
 with st.container():
     if st.button("🔍 Try a Sample Lease"):
         log_sample_click()
@@ -70,18 +85,9 @@ with st.container():
         st.markdown("""
 #### ⚠️ Potential Issues
 - ⚠️ **Late Fee**: Lease allows charging an unspecified late fee — this may violate NJ limits.
-- ⚠️ **Entry Notice**: Landlord entry clause lacks notice requirements.
-- ⚠️ **Repair Language**: Lease says tenant must fix "all issues," which may be too broad under NJ law.
-
-#### ✅ Compliant Clauses
-- ✅ **Security Deposit**: Clearly limited to 1.5 months' rent.
-- ✅ **Lead Paint Disclosure**: Clause included for pre-1978 properties.
-- ✅ **Termination Clause**: Lease states 30-day notice for ending tenancy.
-
----
-This sample analysis was generated using the same AI rules applied to real leases.
+...
         """)
-        
+
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=60, bottomMargin=40)
 
