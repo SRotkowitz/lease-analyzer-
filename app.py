@@ -67,7 +67,8 @@ def generate_pdf(content, email, role, state):
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=60, bottomMargin=40)
 
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="TitleStyle", fontSize=16, leading=20, alignment=TA_LEFT, spaceAfter=12, textColor=colors.HexColor("#003366")))
+    styles.add(ParagraphStyle(name="TitleStyle", fontSize=16, leading=20, alignment=TA_LEFT, spaceAfter=8, textColor=colors.HexColor("#003366")))
+    styles.add(ParagraphStyle(name="SubTitleStyle", fontSize=12, leading=16, alignment=TA_LEFT, textColor=colors.HexColor("#003366"), spaceAfter=12))
     styles.add(ParagraphStyle(name="SectionHeader", fontSize=12, spaceBefore=12, spaceAfter=6, backColor=colors.lightgrey))
     styles.add(ParagraphStyle(name="NormalText", fontSize=10, leading=14))
     styles.add(ParagraphStyle(name="WarningText", fontSize=10, backColor=colors.HexColor("#FFF3CD"), textColor=colors.HexColor("#856404"), spaceBefore=6, spaceAfter=4))
@@ -75,8 +76,9 @@ def generate_pdf(content, email, role, state):
 
     elements = []
 
-    # Title
-    elements.append(Paragraph(f"{state} Lease Analysis Report", styles["TitleStyle"]))
+    # Title and subtitle
+    elements.append(Paragraph("Lease Analysis Report", styles["TitleStyle"]))
+    elements.append(Paragraph(f"State Analyzed: {state}", styles["SubTitleStyle"]))
     elements.append(Paragraph(f"For: {email} ({role})", styles["NormalText"]))
     elements.append(Spacer(1, 6))
 
