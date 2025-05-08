@@ -11,6 +11,11 @@ import time
 # Set Streamlit page config
 st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="centered")
 
+from PIL import Image
+
+banner = Image.open("banner.png")
+st.image(banner, use_column_width=True)
+
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
