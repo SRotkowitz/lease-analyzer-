@@ -10,14 +10,11 @@ from textwrap import wrap
 import time
 from PIL import Image
 
-# Page configuration
 st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="centered")
 
-# Banner image
 banner = Image.open("banner.png")
 st.image(banner, use_container_width=True)
 
-# Initialize OpenAI and sheet logging
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
@@ -28,7 +25,7 @@ def email_already_used(email):
 def save_email(email):
     data = {"data": [{"Email": email}]}
     try:
-        response = requests.post(SHEETDB_URL, json=data)
+        requests.post(SHEETDB_URL, json=data)
     except:
         st.warning("Failed to save email.")
 
@@ -45,12 +42,10 @@ def generate_pdf(content, email, role, state):
     width, height = letter
     x_margin = 40
     y = height - 40
-
     disclaimer = (
         "Disclaimer: This lease analysis is for educational and informational purposes only and "
         "does not constitute legal advice. Always consult with a qualified attorney."
     )
-
     resources = {
         "New Jersey": [
             "Resources:",
@@ -63,21 +58,17 @@ def generate_pdf(content, email, role, state):
             "- PA Legal Aid: https://www.palawhelp.org/issues/housing/landlord-and-tenant-law"
         ]
     }
-
     pdf.setFont("Helvetica", 10)
     pdf.drawString(x_margin, y, f"{state} Lease Analysis for: {email} ({role})")
     y -= 20
-
     pdf.setFont("Helvetica-Oblique", 8)
     for line in wrap(disclaimer, 95):
         pdf.drawString(x_margin, y, line)
         y -= 12
-
     y -= 10
     pdf.setFont("Helvetica", 11)
     pdf.drawString(x_margin, y, "-" * 95)
     y -= 20
-
     pdf.setFont("Helvetica", 10)
     for line in content.split("\n"):
         for wrapped_line in wrap(line, 95):
@@ -87,7 +78,6 @@ def generate_pdf(content, email, role, state):
                 pdf.setFont("Helvetica", 10)
             pdf.drawString(x_margin, y, wrapped_line)
             y -= 14
-
     y -= 20
     pdf.setFont("Helvetica-Bold", 10)
     for line in resources[state]:
@@ -97,12 +87,10 @@ def generate_pdf(content, email, role, state):
             pdf.setFont("Helvetica-Bold", 10)
         pdf.drawString(x_margin, y, line)
         y -= 14
-
     pdf.save()
     buffer.seek(0)
     return buffer
 
-# Sidebar help
 with st.sidebar:
     st.markdown("📚 **Helpful Resources**")
     state_preview = st.session_state.get("state_select", "New Jersey")
@@ -113,7 +101,6 @@ with st.sidebar:
         st.markdown("- [PA Tenant Rights Guide](https://www.attorneygeneral.gov/wp-content/uploads/2018/01/Tenant_Rights.pdf)")
         st.markdown("- [PA Legal Aid Housing](https://www.palawhelp.org/issues/housing/landlord-and-tenant-law)")
 
-# Step 1
 st.markdown("""
 <div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9">
 <h4>Step 1: Select Your State and Role</h4>
@@ -125,7 +112,6 @@ with col1:
 with col2:
     role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"], key="role_radio")
 
-# Step 2
 st.markdown("""
 <div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9; margin-top: 20px">
 <h4>Step 2: Upload Lease and Enter Email</h4>
@@ -137,14 +123,12 @@ with col3:
 with col4:
     email = st.text_input("Your Email (to receive report):", key="email_input")
 
-# Step 3
 st.markdown("""
 <div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9; margin-top: 20px">
 <h4>Step 3: Try a Sample Analysis (Optional)</h4>
 </div>
 """, unsafe_allow_html=True)
 
-# Styled sample button
 st.markdown("""
 <style>
 .sample-button button {
@@ -156,14 +140,23 @@ st.markdown("""
     padding: 0.5em 1em;
     border-radius: 8px;
 }
+.analyze-button button {
+    border: 2px double #006400;
+    background-color: #DFFFD6;
+    color: black;
+    font-weight: bold;
+    width: 100%;
+    padding: 0.5em 1em;
+    border-radius: 8px;
+}
 </style>
-<div class="sample-button">
 """, unsafe_allow_html=True)
 
-if st.button("🔍 Try a Sample Lease"):
-    log_sample_click()
-    st.markdown("### 🧾 Sample Lease Compliance Report")
-    st.markdown("""
+with st.container():
+    if st.button("🔍 Try a Sample Lease"):
+        log_sample_click()
+        st.markdown("### 🧾 Sample Lease Compliance Report")
+        st.markdown("""
 #### ⚠️ Potential Issues
 - ⚠️ **Late Fee**: Lease allows charging an unspecified late fee — this may violate NJ limits.
 - ⚠️ **Entry Notice**: Landlord entry clause lacks notice requirements.
@@ -176,9 +169,8 @@ if st.button("🔍 Try a Sample Lease"):
 
 ---
 This sample analysis was generated using the same AI rules applied to real leases.
-""")
+        """)
 
-# Process uploaded file
 if uploaded_file and email:
     if "@" in email and "." in email:
         if email_already_used(email):
@@ -190,25 +182,41 @@ if uploaded_file and email:
             st.subheader("📄 Extracted Lease Text")
             st.text_area("Lease Text", lease_text, height=300)
 
-            # Styled analyze button
-            st.markdown("""
-<style>
-.analyze-button button {
-    border: 2px double #006400;
-    background-color: #DFFFD6;
-    color: black;
-    font-weight: bold;
-    width: 100%;
-    padding: 0.5em 1em;
-    border-radius: 8px;
-}
-</style>
-<div class="analyze-button">
-""", unsafe_allow_html=True)
-
             if st.button("Analyze Lease"):
                 save_email(email)
                 with st.spinner("Analyzing lease..."):
-                    rules = { ... }  # SAME rules dict as earlier
-                    prompt = f"..."  # SAME prompt logic as earlier
-                    ...
+                    rules = {
+                        "New Jersey": """...""",
+                        "Pennsylvania": """..."""
+                    }
+                    prompt = f"""
+You are a legal assistant trained in {state} tenant law.
+The user reviewing this lease is a {role.lower()}.
+Your task is to review the lease text and identify whether it complies with the {state} tenant rules below.
+Return the output using this format:
+- ⚠️ **Potential Issue:** [short description]
+- ✅ **Compliant:** [short description]
+Only list each item once. Do not include summaries or explanations.
+
+{rules[state]}
+
+LEASE TEXT:
+{lease_text}
+"""
+                    try:
+                        response = client.chat.completions.create(
+                            model="gpt-4",
+                            messages=[{"role": "user", "content": prompt}],
+                            temperature=0.2,
+                            max_tokens=800
+                        )
+                        result = response.choices[0].message.content
+                        cleaned_result = "\n".join(dict.fromkeys(result.strip().split("\n")))
+                        st.subheader("📊 Analysis Results")
+                        st.markdown(cleaned_result)
+                        final_text = "Disclaimer: This lease analysis is not legal advice.\n\n" + cleaned_result
+                        st.download_button("📥 Download as Text", final_text, "lease_analysis.txt")
+                        pdf_data = generate_pdf(cleaned_result, email, role, state)
+                        st.download_button("📄 Download as PDF", pdf_data, "lease_analysis.pdf")
+                    except RateLimitError:
+                        st.error("🚫 Too many requests. Please wait and try again.")
