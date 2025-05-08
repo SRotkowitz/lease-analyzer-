@@ -111,7 +111,40 @@ def generate_pdf(content, email, role, state):
 
 st.markdown("Upload your lease. Our AI checks for legal red flags — fast, free, and private.")
 
-# Optional: Try a sample lease for preview
+
+# 📦 SECTION: STEP 1 – STATE + ROLE SELECTION
+st.markdown("""
+<div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9">
+<h4>Step 1: Select Your State and Role</h4>
+</div>
+""", unsafe_allow_html=True)
+
+col1, col2 = st.columns(2)
+with col1:
+    state = st.selectbox("Which state is this lease for?", ["New Jersey", "Pennsylvania"])
+with col2:
+    role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"])
+
+# 📦 SECTION: STEP 2 – UPLOAD FILE + EMAIL
+st.markdown("""
+<div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9; margin-top: 20px">
+<h4>Step 2: Upload Your Lease and Enter Your Email</h4>
+</div>
+""", unsafe_allow_html=True)
+
+col3, col4 = st.columns([3, 2])
+with col3:
+    uploaded_file = st.file_uploader("Upload Lease (PDF only)", type="pdf")
+with col4:
+    email = st.text_input("Your Email (to receive report):")
+
+# 📦 SECTION: STEP 3 – DEMO BUTTON (OPTIONAL PREVIEW)
+st.markdown("""
+<div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9; margin-top: 20px">
+<h4>Step 3: Preview a Sample Analysis (Optional)</h4>
+</div>
+""", unsafe_allow_html=True)
+
 if st.button("🔍 Try a Sample Lease"):
     log_sample_click()
     st.markdown("### 🧾 Sample Lease Compliance Report")
@@ -128,7 +161,7 @@ if st.button("🔍 Try a Sample Lease"):
 
 ---
 This sample analysis was generated using the same AI rules applied to real leases.
-""")
+    """)
 
 st.markdown("## Step 1: Choose Your State and Role")
 col1, col2 = st.columns(2)
