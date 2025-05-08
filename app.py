@@ -152,7 +152,7 @@ st.markdown("""
 <style>
 .sample-button button {
     border: 2px double #FFD700;
-    background-color: #FFFFE0;
+    background-color: #FFD700; /* Bright yellow */
     color: black;
     font-weight: bold;
     width: 100%;
