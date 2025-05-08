@@ -11,15 +11,13 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.units import inch
 
-# Page config and banner
+# Config
 st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="centered")
 banner = Image.open("banner.png")
 st.image(banner, use_container_width=True)
 st.markdown("<div style='margin-top: -10px'></div>", unsafe_allow_html=True)
 
-# API and SheetDB setup
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
@@ -33,15 +31,12 @@ def save_email(email):
         requests.post(SHEETDB_URL, json=data)
     except:
         st.warning("Failed to save email.")
-
 def log_sample_click():
     data = {"data": [{"Email": "sample_demo_click"}]}
     try:
-        response = requests.post(SHEETDB_URL, json=data)
-        if response.status_code != 201:
-            st.error(f"❌ SheetDB Error: {response.status_code} — {response.text}")
+        requests.post(SHEETDB_URL, json=data)
     except Exception as e:
-        st.error(f"❌ Exception during SheetDB POST: {e}")
+        st.error(f"❌ Sample click error: {e}")
 
 def generate_pdf(content, email, role, state):
     buffer = BytesIO()
@@ -52,8 +47,8 @@ def generate_pdf(content, email, role, state):
     styles.add(ParagraphStyle(name="SubTitleStyle", fontSize=12, leading=16, alignment=TA_LEFT, textColor=colors.HexColor("#003366"), spaceAfter=12))
     styles.add(ParagraphStyle(name="SectionHeader", fontSize=12, spaceBefore=12, spaceAfter=6, backColor=colors.lightgrey))
     styles.add(ParagraphStyle(name="NormalText", fontSize=10, leading=14))
-    styles.add(ParagraphStyle(name="WarningText", fontSize=10, backColor=colors.HexColor("#FFF3CD"), textColor=colors.HexColor("#856404"), spaceBefore=6, spaceAfter=4))
-    styles.add(ParagraphStyle(name="GoodText", fontSize=10, backColor=colors.HexColor("#D4EDDA"), textColor=colors.HexColor("#155724"), spaceBefore=6, spaceAfter=4))
+    styles.add(ParagraphStyle(name="WarningText", fontSize=10, backColor=colors.HexColor("#FFF3CD"), textColor=colors.HexColor("#856404")))
+    styles.add(ParagraphStyle(name="GoodText", fontSize=10, backColor=colors.HexColor("#D4EDDA"), textColor=colors.HexColor("#155724")))
 
     elements = []
     elements.append(Paragraph("Lease Analysis Report", styles["TitleStyle"]))
@@ -61,9 +56,8 @@ def generate_pdf(content, email, role, state):
     elements.append(Paragraph(f"For: {email} ({role})", styles["NormalText"]))
     elements.append(Spacer(1, 6))
 
-    lines = content.strip().split("\n")
-    issues = [line for line in lines if line.startswith("- ⚠️")]
-    compliant = [line for line in lines if line.startswith("- ✅")]
+    issues = [line for line in content.split("\n") if line.startswith("- ⚠️")]
+    compliant = [line for line in content.split("\n") if line.startswith("- ✅")]
 
     if issues:
         elements.append(Paragraph("⚠️ Potential Issues", styles["SectionHeader"]))
@@ -76,64 +70,10 @@ def generate_pdf(content, email, role, state):
         for line in compliant:
             elements.append(Paragraph(line.replace("- ✅", "✅"), styles["GoodText"]))
 
-    resources = {
-        "New Jersey": [
-            "Resources:",
-            "- NJ Truth-in-Renting Guide: https://www.nj.gov/dca/divisions/codes/publications/pdf_lti/truth_in_renting.pdf",
-            "- NJ Tenant Info Page: https://www.nj.gov/dca/divisions/codes/offices/landlord_tenant_information.html"
-        ],
-        "Pennsylvania": [
-            "Resources:",
-            "- PA Tenant Guide: https://www.attorneygeneral.gov/wp-content/uploads/2018/01/Tenant_Rights.pdf",
-            "- PA Legal Aid: https://www.palawhelp.org/issues/housing/landlord-and-tenant-law"
-        ]
-    }
-
-    elements.append(Spacer(1, 24))
-    elements.append(Paragraph("Helpful Resources", styles["SectionHeader"]))
-    for res in resources[state]:
-        elements.append(Paragraph(res, styles["NormalText"]))
-
-    elements.append(Spacer(1, 24))
-    elements.append(Paragraph("Disclaimer", styles["SectionHeader"]))
-    elements.append(Paragraph(
-        "This lease analysis is for educational and informational purposes only and does not constitute legal advice. "
-        "Always consult with a qualified attorney regarding your specific situation.",
-        styles["NormalText"]
-    ))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph("Privacy Notice", styles["SectionHeader"]))
-    elements.append(Paragraph(
-        "We do not store or retain any uploaded lease documents or results. "
-        "Only your email is recorded temporarily to track free analysis usage. Nothing else is stored or shared.",
-        styles["NormalText"]
-    ))
-
     doc.build(elements)
     buffer.seek(0)
     return buffer
-
-# Sample Lease UI
-with st.container():
-    if st.button("🔍 Try a Sample Lease"):
-        log_sample_click()
-        st.markdown("### 🧾 Sample Lease Compliance Report")
-        st.markdown("""
-#### ⚠️ Potential Issues
-- ⚠️ **Late Fee**: Lease allows charging an unspecified late fee — this may violate NJ limits.
-- ⚠️ **Entry Notice**: Landlord entry clause lacks notice requirements.
-- ⚠️ **Repair Language**: Lease says tenant must fix "all issues," which may be too broad under NJ law.
-
-#### ✅ Compliant Clauses
-- ✅ **Security Deposit**: Clearly limited to 1.5 months' rent.
-- ✅ **Lead Paint Disclosure**: Clause included for pre-1978 properties.
-- ✅ **Termination Clause**: Lease states 30-day notice for ending tenancy.
-
----
-This sample analysis was generated using the same AI rules applied to real leases.
-        """)
-
-# Sidebar Resources
+# Sidebar
 with st.sidebar:
     st.markdown("📚 **Helpful Resources**")
     state_preview = st.session_state.get("state_select", "New Jersey")
@@ -144,45 +84,29 @@ with st.sidebar:
         st.markdown("- [PA Tenant Rights Guide](https://www.attorneygeneral.gov/wp-content/uploads/2018/01/Tenant_Rights.pdf)")
         st.markdown("- [PA Legal Aid Housing](https://www.palawhelp.org/issues/housing/landlord-and-tenant-law)")
 
-# Lease Analyzer Input UI
+# UI
 state = st.selectbox("Which state is this lease for?", ["New Jersey", "Pennsylvania"], key="state_select")
 role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"], key="role_radio")
 uploaded_file = st.file_uploader("Upload Lease (PDF only)", type="pdf", key="lease_upload")
 email = st.text_input("Your Email (to receive report):", key="email_input")
 
-valid_email = email and "@" in email and "." in email
-can_analyze = uploaded_file is not None and valid_email
-
-if email and not valid_email:
-    st.warning("Please enter a valid email address.")
-
-if uploaded_file:
-    lease_text = ""
-    for page in PyPDF2.PdfReader(uploaded_file).pages:
-        lease_text += page.extract_text() or ""
-    st.subheader("📄 Extracted Lease Text")
-    st.text_area("Lease Text", lease_text, height=300)
-
-    if st.button("Analyze Lease", disabled=not can_analyze):
-        if email_already_used(email):
-            st.error("⚠️ This email has already used its free lease analysis.")
-        else:
+if uploaded_file and email and "@" in email and "." in email:
+    if email_already_used(email):
+        st.error("⚠️ This email has already used its free lease analysis.")
+    else:
+        lease_text = ""
+        for page in PyPDF2.PdfReader(uploaded_file).pages:
+            lease_text += page.extract_text() or ""
+        if st.button("Analyze Lease"):
             save_email(email)
             with st.spinner("Analyzing lease..."):
-                rules = {
-                    "New Jersey": "- NJ Rule 1\n- NJ Rule 2",
-                    "Pennsylvania": "- PA Rule 1\n- PA Rule 2"
-                }
                 prompt = f"""
 You are a legal assistant trained in {state} tenant law.
 The user reviewing this lease is a {role.lower()}.
-Your task is to review the lease text and identify whether it complies with the {state} tenant rules below.
-Return the output using this format:
-- ⚠️ **Potential Issue:** [short description]
-- ✅ **Compliant:** [short description]
-Only list each item once. Do not include summaries or explanations.
+Your task is to review the lease text and identify whether it complies with local law.
 
-{rules[state]}
+- ⚠️ **Potential Issue:** [short]
+- ✅ **Compliant:** [short]
 
 LEASE TEXT:
 {lease_text}
@@ -195,28 +119,21 @@ LEASE TEXT:
                         max_tokens=800
                     )
                     result = response.choices[0].message.content
-                    cleaned_result = "\n".join(dict.fromkeys(result.strip().split("\n")))
                     st.subheader("📊 Analysis Results")
-                    st.markdown(cleaned_result)
-                    final_text = "Disclaimer: This lease analysis is not legal advice.\n\n" + cleaned_result
-                    st.download_button("📥 Download as Text", final_text, "lease_analysis.txt")
-                    pdf_data = generate_pdf(cleaned_result, email, role, state)
-                    st.download_button("📄 Download as PDF", pdf_data, "lease_analysis.pdf")
+                    st.markdown(result)
+                    pdf_data = generate_pdf(result, email, role, state)
+                    st.download_button("📄 Download PDF", pdf_data, "lease_analysis.pdf")
                 except RateLimitError:
-                    st.error("🚫 Too many requests. Please wait and try again.")
+                    st.error("⚠️ Too many requests. Please wait.")
 
-# Styled Web Disclaimer
+# Footer
 st.markdown("""
-<div style="margin-top: 40px; padding: 20px; border-top: 2px solid #ccc;">
-  <h4 style="color: #003366;">🔒 Disclaimer</h4>
-  <p style="font-size: 14px; line-height: 1.5;">
-    This lease analysis is for <strong>educational and informational purposes only</strong> and does <strong>not constitute legal advice</strong>.<br>
-    Always consult with a qualified attorney for legal guidance related to your lease or rental situation.
-  </p>
-  <h4 style="color: #003366; margin-top: 30px;">🔐 Privacy Notice</h4>
-  <p style="font-size: 14px; line-height: 1.5;">
-    We do not store or retain any uploaded lease documents or analysis results. All document processing happens temporarily during your session.<br>
-    Only your email address is saved (to verify free access) — nothing else is collected, tracked, or shared.
-  </p>
-</div>
-""", unsafe_allow_html=True)
+---
+🔒 **Disclaimer**  
+This tool is for **educational and informational purposes only** and does **not constitute legal advice**.  
+Always consult with a qualified attorney.
+
+🔐 **Privacy Notice**  
+We do not store or retain any uploaded lease documents or results.  
+Only your email address is saved to track free usage. Nothing else is collected or shared.
+""")
