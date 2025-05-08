@@ -16,6 +16,13 @@ banner = Image.open("banner.png")
 st.image(banner, use_container_width=True)
 st.markdown("<div style='margin-top: -10px'></div>", unsafe_allow_html=True)
 
+def log_sample_click():
+    data = {"data": [{"Email": "sample_demo_click"}]}
+    try:
+        requests.post(SHEETDB_URL, json=data)
+    except:
+        st.warning("Failed to track demo preview.")
+
 with st.container():
     if st.button("🔍 Try a Sample Lease"):
         log_sample_click()
