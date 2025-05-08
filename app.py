@@ -65,9 +65,14 @@ def save_email(email):
 def log_sample_click():
     data = {"data": [{"Email": "sample_demo_click"}]}
     try:
-        requests.post(SHEETDB_URL, json=data)
-    except:
-        st.warning("Failed to track demo preview.")
+        response = requests.post(SHEETDB_URL, json=data)
+
+        if response.status_code != 201:
+            st.error(f"❌ SheetDB Error: {response.status_code} — {response.text}")
+        else:
+            st.success("✅ Sample click logged successfully.")
+    except Exception as e:
+        st.error(f"❌ Exception during SheetDB POST: {e}")
 
 def generate_pdf(content, email, role, state):
     from reportlab.lib import colors
