@@ -14,6 +14,15 @@ st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="center
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
+def log_sample_click():
+    data = {"data": [{"Email": "sample_demo_click"}]}
+    try:
+        response = requests.post(SHEETDB_URL, json=data)
+        if response.status_code != 201:
+            st.warning("Something went wrong logging the sample click.")
+    except Exception as e:
+        st.error("Error logging the sample click.")
+
 def email_already_used(email):
     response = requests.get(f"{SHEETDB_URL}/search?Email={email}")
     return response.status_code == 200 and len(response.json()) > 0
@@ -99,8 +108,9 @@ st.markdown("Upload your lease. Our AI checks for legal red flags — fast, free
 
 # Optional: Try a sample lease for preview
 if st.button("🔍 Try a Sample Lease"):
+    log_sample_click()
     st.markdown("### 🧾 Sample Lease Compliance Report")
-    st.markdown("""
+    st.markdown(""" ... [your sample output here] ... """)
 #### ⚠️ Potential Issues
 - **⚠️ Late Fee**: Lease allows charging an unspecified late fee — this may violate NJ limits.
 - **⚠️ Entry Notice**: Landlord entry clause lacks notice requirements.
