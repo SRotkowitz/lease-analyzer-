@@ -1,4 +1,7 @@
 
+# ✅ Working version of app.py before PDF redesign
+# Includes: Banner, Sidebar, Yellow Sample Button, Green Analyze Button, Basic PDF Output
+
 import streamlit as st
 import PyPDF2
 from openai import OpenAI, RateLimitError
@@ -8,12 +11,6 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from textwrap import wrap
 from PIL import Image
-
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
-from reportlab.lib.enums import TA_LEFT
-from reportlab.lib.units import inch
 
 st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="centered")
 
@@ -41,39 +38,18 @@ def log_sample_click():
     except:
         st.warning("Failed to track demo preview.")
 
-def generate_redesigned_pdf(content, email, role, state):
+def generate_pdf(content, email, role, state):
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=60, bottomMargin=40)
-    styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="TitleStyle", fontSize=16, leading=20, spaceAfter=12, alignment=TA_LEFT, textColor=colors.HexColor("#003366")))
-    styles.add(ParagraphStyle(name="SectionHeader", fontSize=13, leading=18, spaceBefore=12, textColor=colors.HexColor("#222222"), backColor=colors.lightgrey, spaceAfter=6, leftIndent=0))
-    styles.add(ParagraphStyle(name="NormalText", fontSize=10, leading=14))
-    styles.add(ParagraphStyle(name="HighlightIssue", fontSize=10, leading=14, backColor=colors.HexColor("#FFF3CD"), textColor=colors.HexColor("#856404")))
-    styles.add(ParagraphStyle(name="HighlightCompliant", fontSize=10, leading=14, backColor=colors.HexColor("#D4EDDA"), textColor=colors.HexColor("#155724")))
-    elements = []
-    logo_path = "banner.png"
-    elements.append(RLImage(logo_path, width=6.5 * inch, height=1 * inch))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph(f"{state} Lease Compliance Report", styles["TitleStyle"]))
-    elements.append(Paragraph(f"For: <b>{email}</b> ({role})", styles["NormalText"]))
-    elements.append(Spacer(1, 6))
-    disclaimer = "This lease analysis is for educational and informational purposes only and does not constitute legal advice. Always consult with a qualified attorney."
-    elements.append(Paragraph(disclaimer, styles["NormalText"]))
-    elements.append(Spacer(1, 12))
-    lines = content.strip().split("\n")
-    issues, compliant = [], []
-    for line in lines:
-        if line.startswith("- ⚠️"):
-            issues.append(Paragraph(line.replace("- ⚠️", "⚠️"), styles["HighlightIssue"]))
-        elif line.startswith("- ✅"):
-            compliant.append(Paragraph(line.replace("- ✅", "✅"), styles["HighlightCompliant"]))
-    if issues:
-        elements.append(Paragraph("Potential Issues", styles["SectionHeader"]))
-        elements.extend(issues)
-    if compliant:
-        elements.append(Spacer(1, 12))
-        elements.append(Paragraph("Compliant Clauses", styles["SectionHeader"]))
-        elements.extend(compliant)
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    x_margin = 40
+    y = height - 40
+
+    disclaimer = (
+        "Disclaimer: This lease analysis is for educational and informational purposes only and "
+        "does not constitute legal advice. Always consult with a qualified attorney."
+    )
+
     resources = {
         "New Jersey": [
             "Resources:",
@@ -86,23 +62,51 @@ def generate_redesigned_pdf(content, email, role, state):
             "- PA Legal Aid: https://www.palawhelp.org/issues/housing/landlord-and-tenant-law"
         ]
     }
-    elements.append(Spacer(1, 24))
-    elements.append(Paragraph("Helpful Resources", styles["SectionHeader"]))
-    for res in resources[state]:
-        elements.append(Paragraph(res, styles["NormalText"]))
-    doc.build(elements)
+
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_margin, y, f"{state} Lease Analysis for: {email} ({role})")
+    y -= 20
+
+    pdf.setFont("Helvetica-Oblique", 8)
+    for line in wrap(disclaimer, 95):
+        pdf.drawString(x_margin, y, line)
+        y -= 12
+
+    y -= 10
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(x_margin, y, "-" * 95)
+    y -= 20
+
+    pdf.setFont("Helvetica", 10)
+    for line in content.split("\n"):
+        for wrapped_line in wrap(line, 95):
+            if y < 50:
+                pdf.showPage()
+                y = height - 40
+                pdf.setFont("Helvetica", 10)
+            pdf.drawString(x_margin, y, wrapped_line)
+            y -= 14
+
+    y -= 20
+    pdf.setFont("Helvetica-Bold", 10)
+    for line in resources[state]:
+        if y < 50:
+            pdf.showPage()
+            y = height - 40
+            pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(x_margin, y, line)
+        y -= 14
+
+    pdf.save()
     buffer.seek(0)
     return buffer
 
 with st.sidebar:
     st.markdown("📚 **Helpful Resources**")
-    state_preview = st.session_state.get("state_select", "New Jersey")
-    if state_preview == "New Jersey":
-        st.markdown("- [NJ Truth-in-Renting Guide](https://www.nj.gov/dca/divisions/codes/publications/pdf_lti/truth_in_renting.pdf)")
-        st.markdown("- [NJ Landlord-Tenant Info](https://www.nj.gov/dca/divisions/codes/offices/landlord_tenant_information.html)")
-    else:
-        st.markdown("- [PA Tenant Rights Guide](https://www.attorneygeneral.gov/wp-content/uploads/2018/01/Tenant_Rights.pdf)")
-        st.markdown("- [PA Legal Aid Housing](https://www.palawhelp.org/issues/housing/landlord-and-tenant-law)")
+    st.markdown("- [NJ Truth-in-Renting Guide](https://www.nj.gov/dca/divisions/codes/publications/pdf_lti/truth_in_renting.pdf)")
+    st.markdown("- [NJ Landlord-Tenant Info](https://www.nj.gov/dca/divisions/codes/offices/landlord_tenant_information.html)")
+    st.markdown("- [PA Tenant Guide](https://www.attorneygeneral.gov/wp-content/uploads/2018/01/Tenant_Rights.pdf)")
+    st.markdown("- [PA Legal Aid](https://www.palawhelp.org/issues/housing/landlord-and-tenant-law)")
 
 st.markdown("""
 <style>
@@ -127,8 +131,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.text_input("Your Email (to receive report):", key="email_input")
-
+st.markdown('<div class="sample-button">', unsafe_allow_html=True)
 if st.button("🔍 Try a Sample Lease"):
     log_sample_click()
     st.markdown("### 🧾 Sample Lease Compliance Report")
@@ -144,10 +147,10 @@ if st.button("🔍 Try a Sample Lease"):
 - ✅ **Termination Clause**: Lease states 30-day notice for ending tenancy.
 """)
 
-state = st.selectbox("Which state is this lease for?", ["New Jersey", "Pennsylvania"], key="state_select")
-role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"], key="role_radio")
-uploaded_file = st.file_uploader("Upload Lease (PDF only)", type="pdf", key="lease_upload")
-email = st.session_state.get("email_input", "")
+state = st.selectbox("Which state is this lease for?", ["New Jersey", "Pennsylvania"])
+role = st.radio("Who are you reviewing this lease as?", ["Tenant", "Landlord"])
+email = st.text_input("Your Email (to receive report):")
+uploaded_file = st.file_uploader("Upload Lease (PDF only)", type="pdf")
 
 if uploaded_file and email and "@" in email:
     if email_already_used(email):
@@ -157,14 +160,16 @@ if uploaded_file and email and "@" in email:
         for page in PyPDF2.PdfReader(uploaded_file).pages:
             lease_text += page.extract_text() or ""
         st.text_area("📄 Lease Text", lease_text, height=300)
-        if st.button("Analyze Lease", key="analyze"):
+
+        st.markdown('<div class="analyze-button">', unsafe_allow_html=True)
+        if st.button("Analyze Lease"):
             save_email(email)
             with st.spinner("Analyzing lease..."):
                 rules = {
                     "New Jersey": "...",
                     "Pennsylvania": "..."
                 }
-                prompt = f"..."  # Add complete prompt logic here
+                prompt = f"..."  # insert GPT analysis prompt here
                 try:
                     response = client.chat.completions.create(
                         model="gpt-4",
@@ -176,7 +181,7 @@ if uploaded_file and email and "@" in email:
                     cleaned_result = "\n".join(dict.fromkeys(result.strip().split("\n")))
                     st.subheader("📊 Analysis Results")
                     st.markdown(cleaned_result)
-                    pdf_data = generate_redesigned_pdf(cleaned_result, email, role, state)
+                    pdf_data = generate_pdf(cleaned_result, email, role, state)
                     st.download_button("📄 Download as PDF", pdf_data, "lease_analysis.pdf")
                 except RateLimitError:
                     st.error("🚫 Too many requests. Please wait and try again.")
