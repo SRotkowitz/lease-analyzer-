@@ -41,86 +41,77 @@ def generate_pdf(content, email, role, state):
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     from reportlab.lib.enums import TA_LEFT
-    from reportlab.lib.units import inch
+    from reportlab.lib.pagesizes import letter
     from io import BytesIO
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=60, bottomMargin=40)
 
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="TitleStyle", fontSize=16, leading=20, alignment=TA_LEFT, spaceAfter=8, textColor=colors.HexColor("#003366")))
+    styles.add(ParagraphStyle(name="TitleStyle", fontSize=16, leading=20, alignment=TA_LEFT, textColor=colors.HexColor("#003366")))
     styles.add(ParagraphStyle(name="SubTitleStyle", fontSize=12, leading=16, alignment=TA_LEFT, textColor=colors.HexColor("#003366"), spaceAfter=12))
     styles.add(ParagraphStyle(name="SectionHeader", fontSize=12, spaceBefore=12, spaceAfter=6, backColor=colors.lightgrey))
     styles.add(ParagraphStyle(name="NormalText", fontSize=10, leading=14))
-    styles.add(ParagraphStyle(name="WarningText", fontSize=10, backColor=colors.HexColor("#FFF3CD"), textColor=colors.HexColor("#856404"), spaceBefore=6, spaceAfter=4))
-    styles.add(ParagraphStyle(name="GoodText", fontSize=10, backColor=colors.HexColor("#D4EDDA"), textColor=colors.HexColor("#155724"), spaceBefore=6, spaceAfter=4))
+    styles.add(ParagraphStyle(name="WarningText", fontSize=10, backColor=colors.HexColor("#FFF3CD"), textColor=colors.HexColor("#856404")))
+    styles.add(ParagraphStyle(name="GoodText", fontSize=10, backColor=colors.HexColor("#D4EDDA"), textColor=colors.HexColor("#155724")))
 
     elements = []
-
-    # Title and subtitle
     elements.append(Paragraph("Lease Analysis Report", styles["TitleStyle"]))
     elements.append(Paragraph(f"State Analyzed: {state}", styles["SubTitleStyle"]))
     elements.append(Paragraph(f"For: {email} ({role})", styles["NormalText"]))
-    elements.append(Spacer(1, 6))
-
-    disclaimer = "Disclaimer: This lease analysis is for educational and informational purposes only and does not constitute legal advice. Always consult with a qualified attorney."
-    elements.append(Paragraph(disclaimer, styles["NormalText"]))
     elements.append(Spacer(1, 12))
 
-    # Parse results
-    lines = content.strip().split("\\n")
-    issues = [line for line in lines if line.startswith("- ⚠️")]
-    compliant = [line for line in lines if line.startswith("- ✅")]
+    issues = [line for line in content.strip().split("\n") if line.startswith("- ⚠️")]
+    compliant = [line for line in content.strip().split("\n") if line.startswith("- ✅")]
 
     if issues:
         elements.append(Paragraph("⚠️ Potential Issues", styles["SectionHeader"]))
         for line in issues:
             elements.append(Paragraph(line.replace("- ⚠️", "⚠️"), styles["WarningText"]))
+        elements.append(Spacer(1, 12))
 
     if compliant:
-        elements.append(Spacer(1, 12))
         elements.append(Paragraph("✅ Compliant Clauses", styles["SectionHeader"]))
         for line in compliant:
             elements.append(Paragraph(line.replace("- ✅", "✅"), styles["GoodText"]))
+        elements.append(Spacer(1, 12))
 
-    # Resources section
+    # Resources
     resources = {
         "New Jersey": [
-            "Resources:",
             "- NJ Truth-in-Renting Guide: https://www.nj.gov/dca/divisions/codes/publications/pdf_lti/truth_in_renting.pdf",
             "- NJ Tenant Info Page: https://www.nj.gov/dca/divisions/codes/offices/landlord_tenant_information.html"
         ],
         "Pennsylvania": [
-            "Resources:",
             "- PA Tenant Guide: https://www.attorneygeneral.gov/wp-content/uploads/2018/01/Tenant_Rights.pdf",
             "- PA Legal Aid: https://www.palawhelp.org/issues/housing/landlord-and-tenant-law"
         ]
     }
 
-    elements.append(Spacer(1, 24))
     elements.append(Paragraph("Helpful Resources", styles["SectionHeader"]))
-    for res in resources[state]:
-        elements.append(Paragraph(res, styles["NormalText"]))
+    for link in resources[state]:
+        elements.append(Paragraph(link, styles["NormalText"]))
+    elements.append(Spacer(1, 12))
 
-    elements.append(Spacer(1, 24))
+    # Disclaimer and Privacy
     elements.append(Paragraph("Disclaimer", styles["SectionHeader"]))
     elements.append(Paragraph(
         "This lease analysis is for educational and informational purposes only and does not constitute legal advice. "
         "Always consult with a qualified attorney regarding your specific situation.",
         styles["NormalText"]
     ))
-
-    elements.append(Spacer(1, 12))
+    elements.append(Spacer(1, 6))
     elements.append(Paragraph("Privacy Notice", styles["SectionHeader"]))
     elements.append(Paragraph(
         "We do not store or retain any uploaded lease documents or results. "
-        "Only your email is recorded temporarily to track free analysis usage. Nothing else is stored or shared.",
+        "Only your email is recorded temporarily to track free analysis usage.",
         styles["NormalText"]
     ))
 
     doc.build(elements)
     buffer.seek(0)
     return buffer
+
 
 with st.sidebar:
     st.markdown("📚 **Helpful Resources**")
