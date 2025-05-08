@@ -37,15 +37,53 @@ def log_sample_click():
         st.warning("Failed to track demo preview.")
 
 def generate_pdf(content, email, role, state):
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.lib.enums import TA_LEFT
+    from reportlab.lib.units import inch
+    from io import BytesIO
+
     buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
-    x_margin = 40
-    y = height - 40
-    disclaimer = (
-        "Disclaimer: This lease analysis is for educational and informational purposes only and "
-        "does not constitute legal advice. Always consult with a qualified attorney."
-    )
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=60, bottomMargin=40)
+
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name="TitleStyle", fontSize=16, leading=20, alignment=TA_LEFT, spaceAfter=8, textColor=colors.HexColor("#003366")))
+    styles.add(ParagraphStyle(name="SubTitleStyle", fontSize=12, leading=16, alignment=TA_LEFT, textColor=colors.HexColor("#003366"), spaceAfter=12))
+    styles.add(ParagraphStyle(name="SectionHeader", fontSize=12, spaceBefore=12, spaceAfter=6, backColor=colors.lightgrey))
+    styles.add(ParagraphStyle(name="NormalText", fontSize=10, leading=14))
+    styles.add(ParagraphStyle(name="WarningText", fontSize=10, backColor=colors.HexColor("#FFF3CD"), textColor=colors.HexColor("#856404"), spaceBefore=6, spaceAfter=4))
+    styles.add(ParagraphStyle(name="GoodText", fontSize=10, backColor=colors.HexColor("#D4EDDA"), textColor=colors.HexColor("#155724"), spaceBefore=6, spaceAfter=4))
+
+    elements = []
+
+    # Title and subtitle
+    elements.append(Paragraph("Lease Analysis Report", styles["TitleStyle"]))
+    elements.append(Paragraph(f"State Analyzed: {state}", styles["SubTitleStyle"]))
+    elements.append(Paragraph(f"For: {email} ({role})", styles["NormalText"]))
+    elements.append(Spacer(1, 6))
+
+    disclaimer = "Disclaimer: This lease analysis is for educational and informational purposes only and does not constitute legal advice. Always consult with a qualified attorney."
+    elements.append(Paragraph(disclaimer, styles["NormalText"]))
+    elements.append(Spacer(1, 12))
+
+    # Parse results
+    lines = content.strip().split("\\n")
+    issues = [line for line in lines if line.startswith("- ⚠️")]
+    compliant = [line for line in lines if line.startswith("- ✅")]
+
+    if issues:
+        elements.append(Paragraph("⚠️ Potential Issues", styles["SectionHeader"]))
+        for line in issues:
+            elements.append(Paragraph(line.replace("- ⚠️", "⚠️"), styles["WarningText"]))
+
+    if compliant:
+        elements.append(Spacer(1, 12))
+        elements.append(Paragraph("✅ Compliant Clauses", styles["SectionHeader"]))
+        for line in compliant:
+            elements.append(Paragraph(line.replace("- ✅", "✅"), styles["GoodText"]))
+
+    # Resources section
     resources = {
         "New Jersey": [
             "Resources:",
@@ -58,36 +96,29 @@ def generate_pdf(content, email, role, state):
             "- PA Legal Aid: https://www.palawhelp.org/issues/housing/landlord-and-tenant-law"
         ]
     }
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(x_margin, y, f"{state} Lease Analysis for: {email} ({role})")
-    y -= 20
-    pdf.setFont("Helvetica-Oblique", 8)
-    for line in wrap(disclaimer, 95):
-        pdf.drawString(x_margin, y, line)
-        y -= 12
-    y -= 10
-    pdf.setFont("Helvetica", 11)
-    pdf.drawString(x_margin, y, "-" * 95)
-    y -= 20
-    pdf.setFont("Helvetica", 10)
-    for line in content.split("\n"):
-        for wrapped_line in wrap(line, 95):
-            if y < 50:
-                pdf.showPage()
-                y = height - 40
-                pdf.setFont("Helvetica", 10)
-            pdf.drawString(x_margin, y, wrapped_line)
-            y -= 14
-    y -= 20
-    pdf.setFont("Helvetica-Bold", 10)
-    for line in resources[state]:
-        if y < 50:
-            pdf.showPage()
-            y = height - 40
-            pdf.setFont("Helvetica-Bold", 10)
-        pdf.drawString(x_margin, y, line)
-        y -= 14
-    pdf.save()
+
+    elements.append(Spacer(1, 24))
+    elements.append(Paragraph("Helpful Resources", styles["SectionHeader"]))
+    for res in resources[state]:
+        elements.append(Paragraph(res, styles["NormalText"]))
+
+    elements.append(Spacer(1, 24))
+    elements.append(Paragraph("Disclaimer", styles["SectionHeader"]))
+    elements.append(Paragraph(
+        "This lease analysis is for educational and informational purposes only and does not constitute legal advice. "
+        "Always consult with a qualified attorney regarding your specific situation.",
+        styles["NormalText"]
+    ))
+
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph("Privacy Notice", styles["SectionHeader"]))
+    elements.append(Paragraph(
+        "We do not store or retain any uploaded lease documents or results. "
+        "Only your email is recorded temporarily to track free analysis usage. Nothing else is stored or shared.",
+        styles["NormalText"]
+    ))
+
+    doc.build(elements)
     buffer.seek(0)
     return buffer
 
