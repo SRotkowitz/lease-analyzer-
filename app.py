@@ -19,9 +19,15 @@ st.markdown("<div style='margin-top: -10px'></div>", unsafe_allow_html=True)
 def log_sample_click():
     data = {"data": [{"Email": "sample_demo_click"}]}
     try:
-        requests.post(SHEETDB_URL, json=data)
-    except:
-        st.warning("Failed to track demo preview.")
+        response = requests.post(SHEETDB_URL, json=data)
+
+        # Check if the response was successful
+        if response.status_code != 201:
+            st.error(f"❌ SheetDB Error: {response.status_code} — {response.text}")
+        else:
+            st.success("✅ Sample click logged successfully.")
+    except Exception as e:
+        st.error(f"❌ Exception during SheetDB POST: {e}")
 
 with st.container():
     if st.button("🔍 Try a Sample Lease"):
