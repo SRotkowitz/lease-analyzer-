@@ -14,6 +14,7 @@ st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="center
 
 banner = Image.open("banner.png")
 st.image(banner, use_container_width=True)
+st.markdown("<div style='margin-top: -10px'></div>", unsafe_allow_html=True)
 
 with st.container():
     if st.button("🔍 Try a Sample Lease"):
