@@ -63,7 +63,7 @@ def generate_pdf(content, email, role, state):
     from reportlab.lib.units import inch
     from io import BytesIO
 
-    with st.container():
+with st.container():
     if st.button("🔍 Try a Sample Lease"):
         log_sample_click()
         st.markdown("### 🧾 Sample Lease Compliance Report")
