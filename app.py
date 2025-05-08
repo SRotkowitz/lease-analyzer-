@@ -120,6 +120,23 @@ def generate_pdf(content, email, role, state):
     elements.append(Paragraph("Helpful Resources", styles["SectionHeader"]))
     for res in resources[state]:
         elements.append(Paragraph(res, styles["NormalText"]))
+    
+    # Add spacing and footer
+    elements.append(Spacer(1, 24))
+    elements.append(Paragraph("Disclaimer", styles["SectionHeader"]))
+    elements.append(Paragraph(
+        "This lease analysis is for educational and informational purposes only and does not constitute legal advice. "
+        "Always consult with a qualified attorney regarding your specific situation.",
+        styles["NormalText"]
+    ))
+    
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph("Privacy Notice", styles["SectionHeader"]))
+    elements.append(Paragraph(
+        "We do not store or retain any uploaded lease documents or results. "
+        "Only your email is recorded temporarily to track free analysis usage. Nothing else is stored or shared.",
+        styles["NormalText"]
+    ))
 
     doc.build(elements)
     buffer.seek(0)
@@ -243,3 +260,15 @@ LEASE TEXT:
                     st.download_button("📄 Download as PDF", pdf_data, "lease_analysis.pdf")
                 except RateLimitError:
                     st.error("🚫 Too many requests. Please wait and try again.")
+
+st.markdown("""
+---
+🔒 **Disclaimer**  
+This tool is for **educational and informational purposes only** and does **not constitute legal advice**.  
+Always consult with a qualified attorney for legal guidance related to your lease or rental situation.
+
+🔐 **Privacy Notice**  
+We do not store or retain any uploaded lease documents or analysis results. All document processing happens temporarily during your session.  
+Only your email address is saved (to verify free access) — nothing else is collected, tracked, or shared.
+---
+""")
