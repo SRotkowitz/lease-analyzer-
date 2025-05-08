@@ -212,8 +212,7 @@ if uploaded_file:
                     "New Jersey": """...""",
                     "Pennsylvania": """..."""
                 }
-                prompt = f"""  # your existing GPT prompt block continues here
-
+                prompt = f"""
 You are a legal assistant trained in {state} tenant law.
 The user reviewing this lease is a {role.lower()}.
 Your task is to review the lease text and identify whether it complies with the {state} tenant rules below.
@@ -227,20 +226,20 @@ Only list each item once. Do not include summaries or explanations.
 LEASE TEXT:
 {lease_text}
 """
-                    try:
-                        response = client.chat.completions.create(
-                            model="gpt-4",
-                            messages=[{"role": "user", "content": prompt}],
-                            temperature=0.2,
-                            max_tokens=800
-                        )
-                        result = response.choices[0].message.content
-                        cleaned_result = "\n".join(dict.fromkeys(result.strip().split("\n")))
-                        st.subheader("📊 Analysis Results")
-                        st.markdown(cleaned_result)
-                        final_text = "Disclaimer: This lease analysis is not legal advice.\n\n" + cleaned_result
-                        st.download_button("📥 Download as Text", final_text, "lease_analysis.txt")
-                        pdf_data = generate_pdf(cleaned_result, email, role, state)
-                        st.download_button("📄 Download as PDF", pdf_data, "lease_analysis.pdf")
-                    except RateLimitError:
-                        st.error("🚫 Too many requests. Please wait and try again.")
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-4",
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.2,
+                        max_tokens=800
+                    )
+                    result = response.choices[0].message.content
+                    cleaned_result = "\n".join(dict.fromkeys(result.strip().split("\n")))
+                    st.subheader("📊 Analysis Results")
+                    st.markdown(cleaned_result)
+                    final_text = "Disclaimer: This lease analysis is not legal advice.\n\n" + cleaned_result
+                    st.download_button("📥 Download as Text", final_text, "lease_analysis.txt")
+                    pdf_data = generate_pdf(cleaned_result, email, role, state)
+                    st.download_button("📄 Download as PDF", pdf_data, "lease_analysis.pdf")
+                except RateLimitError:
+                    st.error("🚫 Too many requests. Please wait and try again.")
