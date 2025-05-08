@@ -251,3 +251,18 @@ LEASE TEXT:
                         st.download_button("📄 Download as PDF", pdf_data, "lease_analysis.pdf")
                     except RateLimitError:
                         st.error("🚫 Too many requests. Please wait and try again.")
+
+st.markdown("""
+<div style="margin-top: 40px; padding: 20px; border-top: 2px solid #ccc;">
+  <h4 style="color: #003366;">🔒 Disclaimer</h4>
+  <p style="font-size: 14px; line-height: 1.5;">
+    This lease analysis is for <strong>educational and informational purposes only</strong> and does <strong>not constitute legal advice</strong>.<br>
+    Always consult with a qualified attorney for legal guidance related to your lease or rental situation.
+  </p>
+  <h4 style="color: #003366; margin-top: 30px;">🔐 Privacy Notice</h4>
+  <p style="font-size: 14px; line-height: 1.5;">
+    We do not store or retain any uploaded lease documents or analysis results. All document processing happens temporarily during your session.<br>
+    Only your email address is saved (to verify free access) — nothing else is collected, tracked, or shared.
+  </p>
+</div>
+""", unsafe_allow_html=True)
