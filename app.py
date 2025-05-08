@@ -261,6 +261,7 @@ LEASE TEXT:
                 except RateLimitError:
                     st.error("🚫 Too many requests. Please wait and try again.")
 
+# This is the very last line in app.py
 st.markdown("""
 ---
 🔒 **Disclaimer**  
