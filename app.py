@@ -175,10 +175,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 with st.container():
-    if st.button("🔍 Try a Sample Lease"):
-        log_sample_click()
-        st.markdown("### 🧾 Sample Lease Compliance Report")
-        st.markdown("""
+    st.markdown("### 🧾 Example: Lease Red Flags Caught in NJ")
+    st.markdown("""
 #### ⚠️ Potential Issues
 - ⚠️ **Late Fee**: Lease allows charging an unspecified late fee — this may violate NJ limits.
 - ⚠️ **Entry Notice**: Landlord entry clause lacks notice requirements.
@@ -188,6 +186,11 @@ with st.container():
 - ✅ **Security Deposit**: Clearly limited to 1.5 months' rent.
 - ✅ **Lead Paint Disclosure**: Clause included for pre-1978 properties.
 - ✅ **Termination Clause**: Lease states 30-day notice for ending tenancy.
+
+---
+This sample analysis was generated using the same AI rules applied to real leases.
+    """)
+
 
 ---
 This sample analysis was generated using the same AI rules applied to real leases.
