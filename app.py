@@ -191,11 +191,6 @@ with st.container():
 This sample analysis was generated using the same AI rules applied to real leases.
     """)
 
-
----
-This sample analysis was generated using the same AI rules applied to real leases.
-        """)
-
 if uploaded_file and email:
     if "@" in email and "." in email:
         if email_already_used(email):
