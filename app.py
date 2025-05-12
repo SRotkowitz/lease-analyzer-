@@ -15,6 +15,16 @@ st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="center
 banner = Image.open("banner.png")
 st.image(banner, use_container_width=True)
 
+st.markdown("""
+<div style="background-color:#E6F2FF; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+  <strong>⚖️ Lease Analyzer</strong> scans for common legal issues in NJ and PA rental agreements.
+  <br><br>
+  Tenants and landlords use it to catch hidden clauses that may violate local laws—before they sign or renew.
+  <br><br>
+  <em>No documents are stored. Results are private, instant, and free to try.</em>
+</div>
+""", unsafe_allow_html=True)
+
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
@@ -136,7 +146,7 @@ with col2:
 
 st.markdown("""
 <div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9; margin-top: 20px">
-<h4>Step 2: Upload Lease and Enter Email</h4>
+<h4>Step 2: Is Your Lease Legal? Upload It to Find Out</h4>
 </div>
 """, unsafe_allow_html=True)
 uploaded_file = st.file_uploader("📄 Upload Your Lease (PDF only) to See If It Contains Legal Red Flags", type="pdf", key="lease_upload")
@@ -145,7 +155,7 @@ email = None  # Delay email input until later
 
 st.markdown("""
 <div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9; margin-top: 20px">
-<h4>Step 3: Try a Sample Analysis (Optional)</h4>
+<h4>Real Example: Here’s What Our AI Caught in a NJ Lease</h4>
 </div>
 """, unsafe_allow_html=True)
 
