@@ -182,5 +182,7 @@ LEASE TEXT:
             st.error("🚫 Too many requests. Please wait and try again.")
 
 with st.expander("🔐 Disclaimer & Privacy"):
-    st.markdown("**Disclaimer:** This lease analysis is for informational purposes only and does not constitute legal advice.  
-**Privacy:** We do not store your documents or results. Only your email is recorded temporarily for usage tracking.")
+    st.markdown("""
+**Disclaimer:** This lease analysis is for informational purposes only and does not constitute legal advice.  
+**Privacy:** We do not store your documents or results. Only your email is recorded temporarily for usage tracking.
+""")
