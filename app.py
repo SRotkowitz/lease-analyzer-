@@ -139,11 +139,9 @@ st.markdown("""
 <h4>Step 2: Upload Lease and Enter Email</h4>
 </div>
 """, unsafe_allow_html=True)
-col3, col4 = st.columns([3, 2])
-with col3:
-    uploaded_file = st.file_uploader("Upload Lease (PDF only)", type="pdf", key="lease_upload")
-with col4:
-    email = st.text_input("Your Email (to receive report):", key="email_input")
+uploaded_file = st.file_uploader("📄 Upload Your Lease (PDF only) to See If It Contains Legal Red Flags", type="pdf", key="lease_upload")
+
+email = None  # Delay email input until later
 
 st.markdown("""
 <div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #f9f9f9; margin-top: 20px">
@@ -240,6 +238,16 @@ LEASE TEXT:
                         st.download_button("📄 Download as PDF", pdf_data, "lease_analysis.pdf")
                     except RateLimitError:
                         st.error("🚫 Too many requests. Please wait and try again.")
+
+email = st.text_input("🔓 Enter your email to download the full PDF report:", key="email_input")
+
+if email and "@" in email and "." in email:
+    if email_already_used(email):
+        st.warning("⚠️ This email has already used its free lease analysis.")
+    else:
+        save_email(email)
+        pdf_data = generate_pdf(cleaned_result, email, role, state)
+        st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
 
 st.markdown("""
 <div style="margin-top: 40px; padding: 20px; border-top: 2px solid #ccc;">
