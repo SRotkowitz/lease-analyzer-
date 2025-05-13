@@ -146,6 +146,23 @@ with st.expander("🔍 Example: What We Found in a Real NJ Lease"):
 - ✅ **Termination Clause**: Lease states 30-day notice for ending tenancy.
 """)
 
+st.markdown("### ⭐ What Others Are Saying")
+
+testimonials = {
+    "Verified NJ Tenant": "“I used this tool before renewing my lease — it caught 2 things my lawyer missed. Highly recommended.”",
+    "NJ Landlord, 18 Units": "“This flagged a clause I didn’t realize was illegal in NJ. Saved me a headache with a tenant dispute.”",
+    "First-Time Renter (PA)": "“Really simple. I uploaded my lease and saw the issues instantly. I didn't even need to sign up.”",
+    "NJ Real Estate Agent": "“I send this tool to clients before they sign anything. It’s a fast and helpful second check.”"
+}
+
+selected = st.selectbox("Pick a user story:", list(testimonials.keys()), label_visibility="collapsed")
+st.markdown(f"""
+<div style="font-size: 14px; color: #444; font-style: italic; border-left: 4px solid #ccc; padding-left: 12px; margin-top: -10px;">
+  {testimonials[selected]}<br>
+  <span style="font-weight: bold;">— {selected}</span>
+</div>
+""", unsafe_allow_html=True)
+
 st.markdown("""
 <div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #ffffff; margin-bottom: 20px;">
   <h4 style="color:#003366;">📄 Step 1: Upload Your Lease</h4>
