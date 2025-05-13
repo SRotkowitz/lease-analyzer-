@@ -24,12 +24,12 @@ def email_already_used(email):
     response = requests.get(f"{SHEETDB_URL}/search?Email={email}")
     return response.status_code == 200 and len(response.json()) > 0
 
-def save_email(email):
-    data = {"data": [{"Email": email}]}
+def log_user_action(email, action):
+    data = {"data": [{"Email": email, "Action": action, "Time": time.strftime("%Y-%m-%d %H:%M:%S")}]}
     try:
         requests.post(SHEETDB_URL, json=data)
     except:
-        st.warning("Failed to save email.")
+        st.warning("Failed to log user action.")
 
 def log_sample_click():
     data = {"data": [{"Email": "sample_demo_click"}]}
@@ -151,6 +151,7 @@ if uploaded_file and submitted:
     lease_text = ""
     for page in PyPDF2.PdfReader(uploaded_file).pages:
         lease_text += page.extract_text() or ""
+    log_user_action(email if email else "anonymous", "Uploaded Lease")
     st.subheader("📄 Lease Text Extracted")
     st.text_area("Lease Text", lease_text, height=300)
 
@@ -207,12 +208,16 @@ LEASE TEXT:
             email = st.text_input("🔓 Enter your email to download this report as a PDF:")
             if email and "@" in email and "." in email:
                 if email_already_used(email):
-                    st.warning("⚠️ This email has already used its free lease analysis.")
-                else:
-                    save_email(email)
-                    pdf_data = generate_pdf(cleaned_result, email, role, state)
-                    st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
-                    
+                st.warning("⚠️ This email has already used its free lease analysis.")
+            else:
+                save_email(email)
+                pdf_data = generate_pdf(cleaned_result, email, role, state)
+
+             # ✅ Track the download event
+            log_user_action(email if email else "anonymous", "Downloaded PDF Report")
+
+            st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
+        
         except RateLimitError:
             st.error("🚫 Too many requests. Please wait and try again.")
 
