@@ -151,7 +151,9 @@ if uploaded_file and submitted:
     lease_text = ""
     for page in PyPDF2.PdfReader(uploaded_file).pages:
         lease_text += page.extract_text() or ""
-    log_user_action(email if email else "anonymous", "Uploaded Lease")
+
+    # ✅ Safe to log now — without email
+    log_user_action("anonymous", "Uploaded Lease")
     st.subheader("📄 Lease Text Extracted")
     st.text_area("Lease Text", lease_text, height=300)
 
@@ -215,7 +217,7 @@ LEASE TEXT:
 
                  # ✅ Track the download event
                 
-                log_user_action("anonymous", "Uploaded Lease")
+                log_user_action(email, "Downloaded PDF Report")
 
                 st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
         
