@@ -106,10 +106,14 @@ def generate_pdf(content, email, role, state):
     return buffer
 
 st.markdown("""
-👋 Welcome! This free tool checks NJ/PA leases for illegal or risky clauses.
-
-We don’t store your document. You’ll see results right after uploading—no signup needed.
-""")
+<div style="border: 2px solid #003366; padding: 16px; border-radius: 10px; background-color: #f0f8ff; margin-top: 10px;">
+  <strong>👋 Worried about hidden lease issues?</strong><br><br>
+  This free tool scans NJ and PA leases for illegal or risky clauses — like unclear late fees or illegal entry terms.<br><br>
+  ✅ <em>No sign-up required.</em><br>
+  ✅ <em>Your file isn't stored.</em><br>
+  ✅ <em>Results in seconds.</em>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("**Lease Analyzer** scans for common legal issues in NJ and PA rental agreements. Tenants and landlords use it to catch hidden clauses that may violate local laws - before they sign or renew.")
 
