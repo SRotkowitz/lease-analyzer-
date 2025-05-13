@@ -130,8 +130,14 @@ with st.expander("🔍 Example: What We Found in a Real NJ Lease"):
 - ✅ **Termination Clause**: Lease states 30-day notice for ending tenancy.
 """)
 
+st.markdown("""
+<div style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background-color: #ffffff; margin-bottom: 20px;">
+  <h4 style="color:#003366;">📄 Step 1: Upload Your Lease</h4>
+  <p style="margin-top:-10px;">We’ll scan your PDF for risky or illegal clauses based on your state’s laws.</p>
+</div>
+""", unsafe_allow_html=True)
+
 with st.form("lease_form"):
-    st.subheader("📄 Upload Your Lease to Check for Red Flags")
     col1, col2 = st.columns(2)
     with col1:
         state = st.selectbox("Which state?", ["New Jersey", "Pennsylvania"])
@@ -139,8 +145,8 @@ with st.form("lease_form"):
         role = st.radio("You are a:", ["Tenant", "Landlord"])
 
     uploaded_file = st.file_uploader("Upload Lease (PDF only)", type="pdf")
-    submitted = st.form_submit_button("Analyze Lease")
-
+    submitted = st.form_submit_button("🔍 Analyze Lease")
+    
 if uploaded_file and submitted:
     lease_text = ""
     for page in PyPDF2.PdfReader(uploaded_file).pages:
