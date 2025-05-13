@@ -125,6 +125,14 @@ st.markdown("""
 
 st.markdown("<br><br>", unsafe_allow_html=True)
 
+st.markdown("""
+<div style="background-color: #e6f2ff; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;">
+  <strong>✅ Created by NJ & PA-Trained Legal Professionals</strong><br>
+  Trusted by over <strong>1,200+ landlords and tenants</strong> to flag risky or illegal lease clauses.<br><br>
+  Fast. Confidential. No documents stored.
+</div>
+""", unsafe_allow_html=True) 
+
 st.markdown("**Lease Analyzer** scans for common legal issues in NJ and PA rental agreements. Tenants and landlords use it to catch hidden clauses that may violate local laws - before they sign or renew.")
 
 with st.expander("🔍 Example: What We Found in a Real NJ Lease"):
