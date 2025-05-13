@@ -196,6 +196,12 @@ LEASE TEXT:
 
             st.markdown(cleaned_result)
 
+            st.markdown("""
+            <div style="font-size: 13px; color: #555;">
+            ℹ️ This analysis is for informational purposes only and does not constitute legal advice.
+            </div>
+            """, unsafe_allow_html=True)
+
             st.markdown("<br><br>", unsafe_allow_html=True)
 
             email = st.text_input("🔓 Enter your email to download this report as a PDF:")
@@ -206,6 +212,7 @@ LEASE TEXT:
                     save_email(email)
                     pdf_data = generate_pdf(cleaned_result, email, role, state)
                     st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
+                    
         except RateLimitError:
             st.error("🚫 Too many requests. Please wait and try again.")
 
