@@ -214,7 +214,8 @@ LEASE TEXT:
                 pdf_data = generate_pdf(cleaned_result, email, role, state)
 
                  # ✅ Track the download event
-                log_user_action(email if email else "anonymous", "Downloaded PDF Report")
+                
+                log_user_action("anonymous", "Uploaded Lease")
 
                 st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
         
