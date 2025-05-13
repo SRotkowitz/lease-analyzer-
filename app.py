@@ -21,6 +21,13 @@ st.image(banner, use_container_width=True)
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
+def save_email(email):
+    data = {"data": [{"Email": email}]}
+    try:
+        requests.post(SHEETDB_URL, json=data)
+    except:
+        st.warning("Failed to save email.")
+        
 def email_already_used(email):
     response = requests.get(f"{SHEETDB_URL}/search?Email={email}")
     return response.status_code == 200 and len(response.json()) > 0
