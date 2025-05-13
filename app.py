@@ -208,15 +208,15 @@ LEASE TEXT:
             email = st.text_input("🔓 Enter your email to download this report as a PDF:")
             if email and "@" in email and "." in email:
                 if email_already_used(email):
-                st.warning("⚠️ This email has already used its free lease analysis.")
+                    st.warning("⚠️ This email has already used its free lease analysis.")
             else:
                 save_email(email)
                 pdf_data = generate_pdf(cleaned_result, email, role, state)
 
-             # ✅ Track the download event
-            log_user_action(email if email else "anonymous", "Downloaded PDF Report")
+                 # ✅ Track the download event
+                log_user_action(email if email else "anonymous", "Downloaded PDF Report")
 
-            st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
+                st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
         
         except RateLimitError:
             st.error("🚫 Too many requests. Please wait and try again.")
