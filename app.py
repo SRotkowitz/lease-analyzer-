@@ -115,6 +115,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+st.markdown("<br><br>", unsafe_allow_html=True)
+
 st.markdown("**Lease Analyzer** scans for common legal issues in NJ and PA rental agreements. Tenants and landlords use it to catch hidden clauses that may violate local laws - before they sign or renew.")
 
 with st.expander("🔍 Example: What We Found in a Real NJ Lease"):
