@@ -135,6 +135,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True) 
 
+st.markdown("<br><br>", unsafe_allow_html=True)
+
 with st.expander("🔍 Example: What We Found in a Real NJ Lease"):
     st.markdown("""
 - ⚠️ **Late Fee**: Lease allows charging an unspecified late fee - this may violate NJ limits.
