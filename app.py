@@ -185,8 +185,18 @@ LEASE TEXT:
             result = response.choices[0].message.content
             cleaned_result = "\n".join(dict.fromkeys(result.strip().split("\n")))
 
-            st.subheader("📊 Analysis Results")
+            st.markdown("""
+            <div style="border: 1px solid #28a745; border-radius: 10px; padding: 20px; background-color: #f6fff6; margin-top: 30px;">
+              <h4 style="color:#155724;">📊 Step 2: Lease Analysis Results</h4>
+              <p>Below are the key issues and compliant clauses we found in your lease:</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
             st.markdown(cleaned_result)
+
+            st.markdown("<br><br>", unsafe_allow_html=True)
 
             email = st.text_input("🔓 Enter your email to download this report as a PDF:")
             if email and "@" in email and "." in email:
