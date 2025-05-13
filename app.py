@@ -125,6 +125,8 @@ st.markdown("""
 
 st.markdown("<br><br>", unsafe_allow_html=True)
 
+st.markdown("**Lease Analyzer** scans for common legal issues in NJ and PA rental agreements. Tenants and landlords use it to catch hidden clauses that may violate local laws - before they sign or renew.")
+
 st.markdown("""
 <div style="background-color: #e6f2ff; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;">
   <strong>✅ Created by NJ & PA-Trained Legal Professionals</strong><br>
@@ -132,8 +134,6 @@ st.markdown("""
   Fast. Confidential. No documents stored.
 </div>
 """, unsafe_allow_html=True) 
-
-st.markdown("**Lease Analyzer** scans for common legal issues in NJ and PA rental agreements. Tenants and landlords use it to catch hidden clauses that may violate local laws - before they sign or renew.")
 
 with st.expander("🔍 Example: What We Found in a Real NJ Lease"):
     st.markdown("""
@@ -245,3 +245,10 @@ with st.expander("🔐 Disclaimer & Privacy"):
 **Disclaimer:** This lease analysis is for informational purposes only and does not constitute legal advice.  
 **Privacy:** We do not store your documents or results. Only your email is recorded temporarily for usage tracking.
 """)
+    
+st.markdown("""
+<div style="font-size: 14px; color: #444; margin-top: 15px; font-style: italic;">
+  “I used this tool before renewing my lease — it caught 2 things my lawyer missed. Highly recommended.”
+  <br>— Verified NJ Tenant
+</div>
+""", unsafe_allow_html=True)
