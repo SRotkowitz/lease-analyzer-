@@ -4,6 +4,7 @@ import PyPDF2
 from openai import OpenAI, RateLimitError
 import requests
 from io import BytesIO
+import time
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
