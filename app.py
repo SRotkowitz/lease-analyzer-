@@ -17,6 +17,12 @@ st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="center
 banner = Image.open("banner.png")
 st.image(banner, use_container_width=True)
 
+st.markdown("""
+👋 Welcome! This free tool checks NJ/PA leases for illegal or risky clauses.
+
+We don’t store your document. You’ll see results right after uploading—no signup needed.
+""")
+
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
