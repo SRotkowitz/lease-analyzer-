@@ -30,7 +30,7 @@ def log_user_action(email, action):
         requests.post(SHEETDB_URL, json=data)
     except:
         st.warning("Failed to log user action.")
-
+        
 def log_sample_click():
     data = {"data": [{"Email": "sample_demo_click"}]}
     try:
