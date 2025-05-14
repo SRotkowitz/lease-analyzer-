@@ -38,6 +38,7 @@ st.markdown("""
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     if st.button("🚀 Start Lease Check"):
+        log_user_action("anonymous", "Clicked Start Lease Check")
         st.session_state.scroll_to_form = True
 
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
@@ -95,7 +96,24 @@ def generate_pdf(content, email, role, state):
     return buffer
 
 if st.session_state.scroll_to_form:
-    st.markdown("### Step 1: Upload Your Lease")
+    st.markdown("---")
+    st.markdown("### 👀 Try a Sample Lease")
+
+    if st.button("🧾 View Sample Lease Report"):
+        log_user_action("anonymous", "Viewed Sample Lease")
+
+        st.markdown("#### ⚠️ Potential Issues")
+        st.markdown(\"\"\"
+- ⚠️ **Late Fee:** Lease allows charging an unspecified late fee — this may violate NJ limits.
+- ⚠️ **Entry Notice:** Landlord entry clause lacks notice requirements.
+- ⚠️ **Repairs:** Lease says tenant must fix 'all issues,' which may be overly broad.
+\"\"\")
+        st.markdown("#### ✅ Compliant Clauses")
+        st.markdown(\"\"\"
+- ✅ **Security Deposit:** Limited to 1.5 months' rent.
+- ✅ **Lead Paint Disclosure:** Included for pre-1978 buildings.
+- ✅ **Termination Clause:** Allows 30-day written notice.
+\"\"\")
     with st.form("lease_form"):
         col1, col2 = st.columns(2)
         with col1:
