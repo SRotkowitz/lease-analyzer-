@@ -24,19 +24,34 @@ if "scroll_to_form" not in st.session_state:
 if "scroll_to_form" not in st.session_state:
     st.session_state.scroll_to_form = False
 
+if "scroll_to_form" not in st.session_state:
+    st.session_state.scroll_to_form = False
+
+# Styled CTA block
 st.markdown("""
 <div style="background-color:#FFF8DC; padding: 20px; border-radius: 10px; border: 1px solid #eee; text-align: center; margin-top: 20px;">
   <h4 style="margin-bottom: 10px;">📄 Upload Your Lease Now</h4>
   <p style="font-size: 16px; margin-top: 0;">We’ll scan it for red flags based on NJ/PA law.<br>No signup required.</p>
+  <form action="" method="post">
+    <button type="submit" name="start" style="
+      background-color: #28a745;
+      color: white;
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    ">🚀 Start Lease Check</button>
+  </form>
 </div>
 """, unsafe_allow_html=True)
 
-# Centered styled button using columns
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    if st.button("🚀 Start Lease Check", key="start_button"):
-        st.session_state.scroll_to_form = True
-
+# Detect form submit manually
+import streamlit as st_custom_button_patch
+query_params = st.experimental_get_query_params()
+if st_custom_button_patch.get_script_run_ctx().uploaded_file_mgr.form_data.get("start"):
+    st.session_state.scroll_to_form = True
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
