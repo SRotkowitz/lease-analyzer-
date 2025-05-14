@@ -18,24 +18,6 @@ st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="center
 banner = Image.open("banner.png")
 st.image(banner, use_container_width=True, output_format="auto")
 
-# Set up session state flag to control form visibility
-if "scroll_to_form" not in st.session_state:
-    st.session_state.scroll_to_form = False
-
-# Display intro + call to action
-st.markdown("""
-<div style="background-color:#FFF8DC; padding: 20px; border-radius: 10px; border: 1px solid #eee; text-align: center; margin-top: 20px;">
-  <h4 style="margin-bottom: 10px;">📄 Upload Your Lease Now</h4>
-  <p style="font-size: 16px; margin-top: 0;">We’ll scan it for red flags based on NJ/PA law.<br>No signup required.</p>
-</div>
-""", unsafe_allow_html=True)
-
-# Show centered button with native Streamlit
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    if st.button("🚀 Start Lease Check", key="start_button"):
-        st.session_state.scroll_to_form = True
-
 # Detect form submit manually
 import streamlit as st_custom_button_patch
 query_params = st.experimental_get_query_params()
