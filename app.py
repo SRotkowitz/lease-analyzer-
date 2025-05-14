@@ -95,9 +95,9 @@ def generate_pdf(content, email, role, state):
     buffer.seek(0)
     return buffer
 
-if st.session_state.scroll_to_form:
-    st.markdown("---")
-    st.markdown("### 👀 Try a Sample Lease")
+    if st.session_state.scroll_to_form:
+      st.markdown("---")
+      st.markdown("### 👀 Try a Sample Lease")
 
     if st.button("🧾 View Sample Lease Report"):
         log_user_action("anonymous", "Viewed Sample Lease")
