@@ -45,28 +45,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- TESTIMONIAL ROTATION ---
-if "testimonial_index" not in st.session_state:
-    st.session_state.testimonial_index = 0
-
-testimonials = [
-    {"quote": "“I used this tool before renewing my lease — it caught 2 things my lawyer missed.”", "author": "Verified NJ Tenant"},
-    {"quote": "“This flagged a clause I didn’t realize was illegal. Saved me a headache.”", "author": "NJ Landlord, 18 Units"},
-    {"quote": "“Really simple. I uploaded my lease and saw the issues instantly.”", "author": "First-Time Renter (PA)"},
-    {"quote": "“I send this tool to clients before they sign anything.”", "author": "NJ Real Estate Agent"}
-]
-
-t = testimonials[st.session_state.testimonial_index]
-st.markdown(f"""
-<div style='border-left: 4px solid #ccc; padding-left: 15px; margin-top: 20px; font-style: italic; color: #444;'>
-  {t['quote']}<br>
-  <span style='font-weight: bold;'>— {t['author']}</span>
-</div>
-""", unsafe_allow_html=True)
-
-if st.button("Next Testimonial"):
-    st.session_state.testimonial_index = (st.session_state.testimonial_index + 1) % len(testimonials)
-
 # --- SCROLL TO FORM ---
 if "scroll_to_form" not in st.session_state:
     st.session_state.scroll_to_form = False
@@ -173,3 +151,30 @@ LEASE TEXT:
                     st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
             except RateLimitError:
                 st.error("Too many requests. Please wait and try again.")
+
+# --- TESTIMONIAL ROTATION ---
+if "testimonial_index" not in st.session_state:
+    st.session_state.testimonial_index = 0
+
+testimonials = [
+    {"quote": "“I used this tool before renewing my lease — it caught 2 things my lawyer missed.”", "author": "Verified NJ Tenant"},
+    {"quote": "“This flagged a clause I didn’t realize was illegal. Saved me a headache.”", "author": "NJ Landlord, 18 Units"},
+    {"quote": "“Really simple. I uploaded my lease and saw the issues instantly.”", "author": "First-Time Renter (PA)"},
+    {"quote": "“I send this tool to clients before they sign anything.”", "author": "NJ Real Estate Agent"}
+]
+
+t = testimonials[st.session_state.testimonial_index]
+st.markdown(f"""
+<div style='border-left: 4px solid #ccc; padding-left: 15px; margin-top: 20px; font-style: italic; color: #444;'>
+  {t['quote']}<br>
+  <span style='font-weight: bold;'>— {t['author']}</span>
+</div>
+""", unsafe_allow_html=True)
+
+if st.button("Next Testimonial"):
+    st.session_state.testimonial_index = (st.session_state.testimonial_index + 1) % len(testimonials)
+
+st.markdown("""
+**Disclaimer:** This lease analysis is for informational purposes only and does not constitute legal advice.  
+**Privacy:** We do not store your documents or results. Only your email is recorded temporarily for usage tracking.
+""")
