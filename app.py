@@ -18,17 +18,18 @@ st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="center
 banner = Image.open("banner.png")
 st.image(banner, use_container_width=True, output_format="auto")
 
+if "scroll_to_form" not in st.session_state:
+    st.session_state.scroll_to_form = False
+
 st.markdown("""
 <div style="background-color:#FFF8DC; padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #eee;">
   <h4>📄 Upload Your Lease Now</h4>
   <p style="font-size: 16px;">We’ll scan it for red flags based on NJ/PA law. No signup required.</p>
-  <a href="#lease_form_anchor" style="text-decoration: none;">
-    <button style="padding: 10px 20px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;">
-      🚀 Start Lease Check
-    </button>
-  </a>
 </div>
 """, unsafe_allow_html=True)
+
+if st.button("🚀 Start Lease Check"):
+    st.session_state.scroll_to_form = True
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
