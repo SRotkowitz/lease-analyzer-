@@ -16,7 +16,19 @@ from PIL import Image
 st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="centered")
 
 banner = Image.open("banner.png")
-st.image(banner, use_container_width=True)
+st.image(banner, use_container_width=True, output_format="auto")
+
+st.markdown("""
+<div style="background-color:#FFF8DC; padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #eee;">
+  <h4>📄 Upload Your Lease Now</h4>
+  <p style="font-size: 16px;">We’ll scan it for red flags based on NJ/PA law. No signup required.</p>
+  <a href="#lease_form_anchor" style="text-decoration: none;">
+    <button style="padding: 10px 20px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;">
+      🚀 Start Lease Check
+    </button>
+  </a>
+</div>
+""", unsafe_allow_html=True)
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
@@ -133,7 +145,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True) 
 
-st.markdown("<br><br>", unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
 
 with st.expander("🔍 Example: What We Found in a Real NJ Lease"):
     st.markdown("""
