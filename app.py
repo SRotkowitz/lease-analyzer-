@@ -18,10 +18,11 @@ st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="center
 banner = Image.open("banner.png")
 st.image(banner, use_container_width=True, output_format="auto")
 
+# Set up session state flag to control form visibility
 if "scroll_to_form" not in st.session_state:
     st.session_state.scroll_to_form = False
 
-# Trust + Call to Action block
+# Display intro + call to action
 st.markdown("""
 <div style="background-color:#FFF8DC; padding: 20px; border-radius: 10px; border: 1px solid #eee; text-align: center; margin-top: 20px;">
   <h4 style="margin-bottom: 10px;">📄 Upload Your Lease Now</h4>
@@ -29,10 +30,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Centered Streamlit button using columns
+# Show centered button with native Streamlit
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    if st.button("🚀 Start Lease Check"):
+    if st.button("🚀 Start Lease Check", key="start_button"):
         st.session_state.scroll_to_form = True
 
 # Detect form submit manually
@@ -175,15 +176,17 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-with st.form("lease_form"):
-    col1, col2 = st.columns(2)
-    with col1:
-        state = st.selectbox("Which state?", ["New Jersey", "Pennsylvania"])
-    with col2:
-        role = st.radio("You are a:", ["Tenant", "Landlord"])
+if st.session_state.scroll_to_form:
+    st.markdown("### Step 1: Upload Your Lease")
+    with st.form("lease_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            state = st.selectbox("Which state?", ["New Jersey", "Pennsylvania"])
+        with col2:
+            role = st.radio("You are a:", ["Tenant", "Landlord"])
 
-    uploaded_file = st.file_uploader("Upload Lease (PDF only)", type="pdf")
-    submitted = st.form_submit_button("🔍 Analyze Lease")
+        uploaded_file = st.file_uploader("Upload Lease (PDF only)", type="pdf")
+        submitted = st.form_submit_button("🔍 Analyze Lease")
     
 if uploaded_file and submitted:
     lease_text = ""
