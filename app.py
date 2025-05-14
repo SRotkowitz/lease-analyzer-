@@ -21,15 +21,21 @@ st.image(banner, use_container_width=True, output_format="auto")
 if "scroll_to_form" not in st.session_state:
     st.session_state.scroll_to_form = False
 
+if "scroll_to_form" not in st.session_state:
+    st.session_state.scroll_to_form = False
+
 st.markdown("""
-<div style="background-color:#FFF8DC; padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #eee;">
-  <h4>📄 Upload Your Lease Now</h4>
-  <p style="font-size: 16px;">We’ll scan it for red flags based on NJ/PA law. No signup required.</p>
+<div style="background-color:#FFF8DC; padding: 20px; border-radius: 10px; border: 1px solid #eee; text-align: center; margin-top: 20px;">
+  <h4 style="margin-bottom: 10px;">📄 Upload Your Lease Now</h4>
+  <p style="font-size: 16px; margin-top: 0;">We’ll scan it for red flags based on NJ/PA law.<br>No signup required.</p>
 </div>
 """, unsafe_allow_html=True)
 
-if st.button("🚀 Start Lease Check"):
-    st.session_state.scroll_to_form = True
+# Centered styled button using columns
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    if st.button("🚀 Start Lease Check", key="start_button"):
+        st.session_state.scroll_to_form = True
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
