@@ -166,3 +166,8 @@ LEASE TEXT:
                     st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
             except RateLimitError:
                 st.error("🚫 Too many requests. Please wait and try again.")
+
+st.markdown("""
+**Disclaimer:** This lease analysis is for informational purposes only and does not constitute legal advice.  
+**Privacy:** We do not store your documents or results. Only your email is recorded temporarily for usage tracking.
+""")
