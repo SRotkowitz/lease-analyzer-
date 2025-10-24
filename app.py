@@ -14,6 +14,47 @@ import time
 # --- PAGE CONFIG (keep only one set_page_config) ---
 st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer", layout="centered")  # NEW: unified title
 
+# === NJ LANDLORD COMPLIANCE RULES (used in prompt) ===
+NJ_RULES = """
+Check the lease for these New Jersey compliance areas and report clearly:
+
+1) Required Disclosures:
+   - Lead-based paint disclosure for pre-1978 units
+   - NJ Truth-in-Renting Guide acknowledgement (where applicable)
+
+2) Security Deposit:
+   - Max 1.5 months’ rent cap
+   - Interest handling & receipt timelines
+
+3) Late Fees & Rent Increases:
+   - Late fee must be stated and reasonable (no vague “unspecified” amounts)
+   - Rent increase notice periods and any local rent control considerations
+
+4) Habitability & Repairs:
+   - Landlord’s duty to maintain habitable premises cannot be waived
+   - Repair responsibilities appear reasonable and lawful
+
+5) Landlord Entry:
+   - Reasonable notice for non-emergency entry (typically 24 hours)
+   - No unlimited/anytime entry language
+
+6) Anti-Waiver / Illegal Clauses:
+   - No clauses that waive statutory rights or court access
+   - No “confession of judgment” or patently unenforceable penalties
+
+7) Subletting / Assignment:
+   - Terms must be reasonable and not blanket-prohibited if unlawful locally
+
+8) Termination & Notice Periods:
+   - Clear, lawful notice periods; no one-sided rights that violate NJ rules
+
+9) Dispute Resolution:
+   - Arbitration/venue clauses must be reasonable and not strip core rights
+
+10) Miscellaneous Compliance:
+   - Smoking, pets, parking, utilities — ensure terms do not violate NJ law or local ordinances
+"""
+
 # --- HERO / POSITIONING ---
 st.title("NJ Lease Shield — Landlord Compliance Analyzer")
 st.caption("Upload your lease to flag legal risks and missing notices — in minutes.")
@@ -147,21 +188,33 @@ if st.session_state.scroll_to_form:
         lens = "landlord compliance and liability" if role in ["Landlord", "Property Manager"] else "tenant rights and protections"  # NEW
 
         prompt = f"""
+# --- RULES / PROMPT (landlord-compliance tuned) ---
+state = "New Jersey"  # we’re scoped to NJ for now
+lens = "landlord compliance and liability" if role in ["Landlord", "Property Manager"] else "tenant rights and protections"
+
+prompt = f"""
 You are a legal assistant trained in {state} {lens}.
-The user reviewing this lease is a {role.lower()}.
-Your task is to review the lease text and identify whether it complies with the {state} rules below.
-Return the output using this format:
-- 🔴 Critical Risk: [short description]
-- 🟡 Warning: [short description]
-- 🟢 Compliant: [short description]
+The user is a {role.lower()} reviewing a residential lease in {state}.
+Analyze the LEASE TEXT for compliance with the checklist below.
+Respond ONLY in this format, using the exact emoji and labels:
 
-Focus on: disclosures, security deposit limits, late fee legality, habitability obligations, landlord entry notice, anti-waiver clauses, subletting, termination/notice periods, dispute resolution.
+- 🔴 Critical Risk: [one-line description of the problem + why it’s unlawful or high-risk]
+- 🟡 Warning: [one-line description of likely unenforceable/weak or needs clarification]
+- 🟢 Compliant: [one-line description of a clause that appears compliant]
 
-{rules[state]}
+Rules for output:
+- Be concise. One line per bullet.
+- No long paragraphs. No legal citations unless necessary for clarity.
+- If a category is not present, do NOT fabricate it—just omit.
+- Prioritize landlord exposure (fines, lawsuits, unenforceable clauses, disclosures).
+
+CHECKLIST (NJ):
+{NJ_RULES}
 
 LEASE TEXT:
 {lease_text}
 """
+
 
         with st.spinner("Analyzing lease..."):
             try:
