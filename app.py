@@ -178,6 +178,27 @@ LEASE TEXT:
                 # NEW: show context so PMs can tie report to a property
                 st.write(f"📍 **Property:** {property_address or 'N/A'}  |  🏢 **Units:** {num_units}  |  🧑 **Role:** {role}")  # NEW
                 st.markdown(cleaned_result)
+                
+                # === MINI-STEP: COMPLIANCE SUMMARY BADGE ===
+                # Count how many risks and compliant clauses the AI returned
+                critical_count = cleaned_result.count("🔴")
+                warning_count = cleaned_result.count("🟡")
+                compliant_count = cleaned_result.count("🟢")
+                
+                # Display a summary banner
+                st.markdown(
+                    f"""
+                    <div style='background-color:#f7f7f7; padding:12px; border-radius:10px; 
+                                border:1px solid #ddd; margin-bottom:10px;'>
+                      <b>Compliance Summary</b><br>
+                      🔴 <b>Critical:</b> {critical_count} &nbsp;&nbsp;
+                      🟡 <b>Warnings:</b> {warning_count} &nbsp;&nbsp;
+                      🟢 <b>Compliant:</b> {compliant_count}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
                 st.markdown("ℹ️ This analysis is for informational purposes only and does not constitute legal advice.")
 
                 # === EMAIL → PDF DELIVERY (kept) ===
