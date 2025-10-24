@@ -356,6 +356,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# --- Disclaimer Box (kept) ---
 st.markdown("""
 <div style='background-color: #FFFF00; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;'>
     **Disclaimer:** This lease analysis is for informational purposes only and does not constitute legal advice.  
