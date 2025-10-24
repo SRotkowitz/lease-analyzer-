@@ -125,11 +125,12 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    if st.button("🚀 Start Lease Check"):
-        log_user_action("anonymous", "Clicked Start Lease Check")
-        st.session_state.scroll_to_form = True
+# Add vertical space and proper centering for the Start button
+st.markdown("<div style='margin-top: 20px; margin-bottom: 20px; text-align: center;'>", unsafe_allow_html=True)
+if st.button("🚀 Start Lease Check", use_container_width=False):
+    log_user_action("anonymous", "Clicked Start Lease Check")
+    st.session_state.scroll_to_form = True
+st.markdown("</div>", unsafe_allow_html=True)
 
 # --- SAMPLE LEASE REPORT (kept) ---
 if st.session_state.scroll_to_form:
