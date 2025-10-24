@@ -190,18 +190,17 @@ if st.session_state.scroll_to_form:
         prompt = f"""
 You are a legal assistant trained in {state} {lens}.
 The user is a {role.lower()} reviewing a residential lease in {state}.
+
 Analyze the LEASE TEXT for compliance with the checklist below.
-Respond ONLY in this format, using the exact emoji and labels:
 
-- 🔴 Critical Risk: [one-line description of the problem + why it’s unlawful or high-risk]
-- 🟡 Warning: [one-line description of likely unenforceable/weak or needs clarification]
-- 🟢 Compliant: [one-line description of a clause that appears compliant]
-
-Rules for output:
-- Be concise. One line per bullet.
-- No long paragraphs. No legal citations unless necessary for clarity.
-- If a category is not present, do NOT fabricate it—just omit.
-- Prioritize landlord exposure (fines, lawsuits, unenforceable clauses, disclosures).
+⚠️ IMPORTANT — Your response must:
+- Start each issue on a **new line**
+- Always use this exact structure:
+  - 🔴 Critical Risk: ...
+  - 🟡 Warning: ...
+  - 🟢 Compliant: ...
+- Do not use paragraphs, explanations, or numbering.
+- No headings, no intros, no summaries — just the bullet list.
 
 CHECKLIST (NJ):
 {NJ_RULES}
@@ -209,7 +208,6 @@ CHECKLIST (NJ):
 LEASE TEXT:
 {lease_text}
 """
-
 
         with st.spinner("Analyzing lease..."):
             try:
