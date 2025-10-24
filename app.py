@@ -347,6 +347,8 @@ LEASE TEXT:
             except RateLimitError:
                 st.error("Too many requests. Please wait and try again.")
 
+st.divider()
+
 # --- Light trust box (kept) ---
 st.markdown("""
 <div style='background-color: #e6f2ff; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;'>
