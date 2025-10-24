@@ -188,10 +188,6 @@ if st.session_state.scroll_to_form:
         lens = "landlord compliance and liability" if role in ["Landlord", "Property Manager"] else "tenant rights and protections"  # NEW
 
         prompt = f"""
-# --- RULES / PROMPT (landlord-compliance tuned) ---
-state = "New Jersey"  # we’re scoped to NJ for now
-lens = "landlord compliance and liability" if role in ["Landlord", "Property Manager"] else "tenant rights and protections"
-
 prompt = f"""
 You are a legal assistant trained in {state} {lens}.
 The user is a {role.lower()} reviewing a residential lease in {state}.
