@@ -1,49 +1,39 @@
+# app.py
+
 import streamlit as st
+from io import BytesIO
+import PyPDF2
+from openai import OpenAI, RateLimitError
+import requests
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from PIL import Image
+import time
 
-# 1) Page config (title shown in browser tab & default layout)
-st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer", layout="centered")
+# --- PAGE CONFIG (keep only one set_page_config) ---
+st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer", layout="centered")  # NEW: unified title
 
-# 2) Hero/title
+# --- HERO / POSITIONING ---
 st.title("NJ Lease Shield — Landlord Compliance Analyzer")
-
-# 3) Subhead (one-line value prop)
 st.caption("Upload your lease to flag legal risks and missing notices — in minutes.")
-
-# 4) Professional callout (who it’s for)
 st.markdown("**For:** Landlords & Property Managers in New Jersey (PA coming soon)")
-
-# 5) Short disclaimer (keeps you safe, sets expectations)
 st.info(
     "This tool provides an automated compliance summary based on NJ laws and public resources. "
     "It is **not** legal advice.",
     icon="ℹ️"
 )
-
 st.divider()
 
-# (Optional) Persona switch — doesn't change functionality yet, just stored for later
+# (Optional) Persona switch — persisted for later logic
 persona = st.radio("I am a:", ["Landlord", "Property Manager", "Tenant"], index=0, horizontal=True)
 st.session_state["persona"] = persona
 
-import streamlit as st
-import PyPDF2
-from openai import OpenAI, RateLimitError
-import requests
-from io import BytesIO
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_LEFT
-from reportlab.lib import colors
-from PIL import Image
-import time
-
 # --- CONFIG ---
-st.set_page_config(page_title="Lease Analyzer", page_icon="📄", layout="centered")
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 SHEETDB_URL = "https://sheetdb.io/api/v1/ga5o59cph77t9"
 
-# --- LOGGING FUNCTION ---
+# --- LOGGING FUNCTIONS ---
 def log_user_action(email, action):
     data = {"data": [{"Email": email, "Action": action, "Time": time.strftime("%Y-%m-%d %H:%M:%S")}]}
     try:
@@ -59,10 +49,13 @@ def save_email(email):
         st.warning("Failed to save email.")
 
 # --- BANNER IMAGE ---
-banner = Image.open("banner.png")
-st.image(banner, use_container_width=True)
+try:
+    banner = Image.open("banner.png")
+    st.image(banner, use_container_width=True)
+except Exception:
+    pass  # banner is optional; don't break if missing
 
-# --- TRUST BOX ---
+# --- TRUST BOX (kept) ---
 st.markdown("""
 <div style='background-color: #e6f2ff; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;'>
   <strong>✅ Created by NJ & PA-Trained Legal Professionals</strong><br>
@@ -71,7 +64,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- SCROLL TO FORM ---
+# --- SCROLL TO FORM CTA (kept) ---
 if "scroll_to_form" not in st.session_state:
     st.session_state.scroll_to_form = False
 
@@ -88,7 +81,7 @@ with col2:
         log_user_action("anonymous", "Clicked Start Lease Check")
         st.session_state.scroll_to_form = True
 
-# --- SAMPLE LEASE REPORT ---
+# --- SAMPLE LEASE REPORT (kept) ---
 if st.session_state.scroll_to_form:
     st.markdown("---")
     st.markdown("### 👀 Try a Sample Lease")
@@ -107,32 +100,63 @@ if st.session_state.scroll_to_form:
 - ✅ **Termination Clause:** Allows 30-day written notice.
 """)
 
-# --- UPLOAD FORM ---
+# =========================
+# === STEP 2: UPLOAD FORM with METADATA (NEW) ===
+# =========================
 if st.session_state.scroll_to_form:
     st.markdown("### Step 1: Upload Your Lease")
-    with st.form("lease_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            state = st.selectbox("Which state?", ["New Jersey", "Pennsylvania"])
-        with col2:
-            role = st.radio("You are a:", ["Tenant", "Landlord"])
-        uploaded_file = st.file_uploader("Upload Lease (PDF only)", type="pdf")
+
+    with st.form("lease_upload_form"):  # NEW: consolidated form
+        colA, colB = st.columns(2)
+        with colA:
+            # Narrow scope to NJ for now; PA soon (you can add back later)
+            state = st.selectbox("Which state?", ["New Jersey"])  # NEW
+        with colB:
+            role = st.radio("You are a:", ["Landlord", "Property Manager", "Tenant"], index=0)  # NEW default to landlord
+
+        # NEW: simple property metadata for organization
+        property_address = st.text_input("Property Address (optional)")  # NEW
+        num_units = st.number_input("Number of Units", min_value=1, step=1, value=1)  # NEW
+
+        # Allow PDF or DOCX to reduce friction
+        uploaded_file = st.file_uploader("Upload Lease (PDF or DOCX)", type=["pdf", "docx"])  # NEW
+
         submitted = st.form_submit_button("🔍 Analyze Lease")
 
     if uploaded_file and submitted:
+        # Extract text (PDF path shown; DOCX can be added later)
         lease_text = ""
-        for page in PyPDF2.PdfReader(uploaded_file).pages:
-            lease_text += page.extract_text() or ""
+        try:
+            if uploaded_file.name.lower().endswith(".pdf"):
+                reader = PyPDF2.PdfReader(uploaded_file)
+                for page in reader.pages:
+                    lease_text += page.extract_text() or ""
+            else:
+                # Minimal DOCX fallback: instruct user to upload PDF for now
+                st.warning("DOCX support is limited in this version. Please upload a PDF for the best results.")
+        except Exception as e:
+            st.error(f"Could not read file: {e}")
+            st.stop()
+
         log_user_action("anonymous", "Uploaded Lease")
 
-        rules = {"New Jersey": "...", "Pennsylvania": "..."}
+        # --- RULES / PROMPT (kept but slightly reframed) ---
+        # You can replace "..." with your real NJ rule text later
+        rules = {"New Jersey": "..."}
+        # Reframe: make it compliance/liability oriented when role != Tenant
+        lens = "landlord compliance and liability" if role in ["Landlord", "Property Manager"] else "tenant rights and protections"  # NEW
+
         prompt = f"""
-You are a legal assistant trained in {state} tenant law.
+You are a legal assistant trained in {state} {lens}.
 The user reviewing this lease is a {role.lower()}.
-Your task is to review the lease text and identify whether it complies with the {state} tenant rules below.
+Your task is to review the lease text and identify whether it complies with the {state} rules below.
 Return the output using this format:
-- ⚠️ Potential Issue: [short description]
-- ✅ Compliant: [short description]
+- 🔴 Critical Risk: [short description]
+- 🟡 Warning: [short description]
+- 🟢 Compliant: [short description]
+
+Focus on: disclosures, security deposit limits, late fee legality, habitability obligations, landlord entry notice, anti-waiver clauses, subletting, termination/notice periods, dispute resolution.
+
 {rules[state]}
 
 LEASE TEXT:
@@ -149,36 +173,42 @@ LEASE TEXT:
                 )
                 result = response.choices[0].message.content
                 cleaned_result = "\n".join(dict.fromkeys(result.strip().split("\n")))
+
                 st.markdown("### 📊 Step 2: Lease Analysis Results")
+                # NEW: show context so PMs can tie report to a property
+                st.write(f"📍 **Property:** {property_address or 'N/A'}  |  🏢 **Units:** {num_units}  |  🧑 **Role:** {role}")  # NEW
                 st.markdown(cleaned_result)
                 st.markdown("ℹ️ This analysis is for informational purposes only and does not constitute legal advice.")
 
+                # === EMAIL → PDF DELIVERY (kept) ===
                 email = st.text_input("Enter your email to download this report as a PDF:")
                 if email and "@" in email and "." in email:
                     save_email(email)
                     log_user_action(email, "Downloaded PDF Report")
 
-                    # PDF generator
-                    def generate_pdf(content, email, role, state):
+                    def generate_pdf(content, email, role, state, property_address, num_units):
                         buffer = BytesIO()
                         doc = SimpleDocTemplate(buffer, pagesize=letter)
                         styles = getSampleStyleSheet()
-                        elements = [Paragraph("Lease Analysis Report", styles["Heading1"]),
-                                    Paragraph(f"State: {state}", styles["Normal"]),
-                                    Paragraph(f"User: {email} ({role})", styles["Normal"]),
-                                    Spacer(1, 12)]
+                        elements = [
+                            Paragraph("Lease Analysis Report", styles["Heading1"]),
+                            Paragraph(f"State: {state}", styles["Normal"]),
+                            Paragraph(f"User: {email} ({role})", styles["Normal"]),
+                            Paragraph(f"Property: {property_address or 'N/A'} | Units: {num_units}", styles["Normal"]),
+                            Spacer(1, 12)
+                        ]
                         for line in content.split("\n"):
                             elements.append(Paragraph(line, styles["Normal"]))
                         doc.build(elements)
                         buffer.seek(0)
                         return buffer
 
-                    pdf_data = generate_pdf(cleaned_result, email, role, state)
+                    pdf_data = generate_pdf(cleaned_result, email, role, state, property_address, num_units)  # NEW: pass metadata
                     st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
             except RateLimitError:
                 st.error("Too many requests. Please wait and try again.")
 
-# --- TESTIMONIAL ROTATION ---
+# --- TESTIMONIAL ROTATION (kept) ---
 if "testimonial_index" not in st.session_state:
     st.session_state.testimonial_index = 0
 
