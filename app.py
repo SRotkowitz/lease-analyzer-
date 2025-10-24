@@ -370,8 +370,35 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-if st.button("Next Testimonial"):
-    st.session_state.testimonial_index = (st.session_state.testimonial_index + 1) % len(testimonials)
+# --- Testimonial Button (subtle style) ---
+st.markdown(
+    """
+    <style>
+    div.testimonial-button button {
+        background-color: transparent;
+        color: #555;
+        font-size: 0.9em;
+        border: none;
+        padding: 0.2em 0.5em;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+    div.testimonial-button button:hover {
+        color: #000;
+        text-decoration: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Use a container with a custom class for targeted styling
+with st.container():
+    st.markdown('<div class="testimonial-button">', unsafe_allow_html=True)
+    if st.button("Next Testimonial", key="testimonial_next"):
+        st.session_state.testimonial_index = (st.session_state.testimonial_index + 1) % len(testimonials)
+    st.markdown('</div>', unsafe_allow_html=True)
+
 
 # --- TRUST BOX (kept) ---
 st.markdown("""
