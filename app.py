@@ -12,7 +12,7 @@ from PIL import Image
 import time
 
 # --- PAGE CONFIG (keep only one set_page_config) ---
-st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer", layout="centered")  # NEW: unified title
+st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer", layout="centered")
 
 # === NJ LANDLORD COMPLIANCE RULES (used in prompt) ===
 NJ_RULES = """
@@ -140,25 +140,21 @@ if st.session_state.scroll_to_form:
 if st.session_state.scroll_to_form:
     st.markdown("### Step 1: Upload Your Lease")
 
-    with st.form("lease_upload_form"):  # NEW: consolidated form
+    with st.form("lease_upload_form"):
         colA, colB = st.columns(2)
         with colA:
-            # Narrow scope to NJ for now; PA soon (you can add back later)
-            state = st.selectbox("Which state?", ["New Jersey"])  # NEW
+            state = st.selectbox("Which state?", ["New Jersey"])
         with colB:
-            role = st.radio("You are a:", ["Landlord", "Property Manager", "Tenant"], index=0)  # NEW default to landlord
+            role = st.radio("You are a:", ["Landlord", "Property Manager", "Tenant"], index=0)
 
-        # NEW: simple property metadata for organization
-        property_address = st.text_input("Property Address (optional)")  # NEW
-        num_units = st.number_input("Number of Units", min_value=1, step=1, value=1)  # NEW
+        property_address = st.text_input("Property Address (optional)")
+        num_units = st.number_input("Number of Units", min_value=1, step=1, value=1)
 
-        # Allow PDF or DOCX to reduce friction
-        uploaded_file = st.file_uploader("Upload Lease (PDF or DOCX)", type=["pdf", "docx"])  # NEW
-
+        uploaded_file = st.file_uploader("Upload Lease (PDF or DOCX)", type=["pdf", "docx"])
         submitted = st.form_submit_button("🔍 Analyze Lease")
 
     if uploaded_file and submitted:
-        # Extract text (PDF path shown; DOCX can be added later)
+        # Extract text (PDF path shown; DOCX minimal fallback)
         lease_text = ""
         try:
             if uploaded_file.name.lower().endswith(".pdf"):
@@ -166,7 +162,6 @@ if st.session_state.scroll_to_form:
                 for page in reader.pages:
                     lease_text += page.extract_text() or ""
             else:
-                # Minimal DOCX fallback: instruct user to upload PDF for now
                 st.warning("DOCX support is limited in this version. Please upload a PDF for the best results.")
         except Exception as e:
             st.error(f"Could not read file: {e}")
@@ -174,14 +169,10 @@ if st.session_state.scroll_to_form:
 
         log_user_action("anonymous", "Uploaded Lease")
 
-        # --- RULES / PROMPT (kept but slightly reframed) ---
-        # You can replace "..." with your real NJ rule text later
-        rules = {"New Jersey": "..."}
-        # Reframe: make it compliance/liability oriented when role != Tenant
-        lens = "landlord compliance and liability" if role in ["Landlord", "Property Manager"] else "tenant rights and protections"  # NEW
+        # --- RULES / PROMPT (landlord-compliance tuned) ---
+        lens = "landlord compliance and liability" if role in ["Landlord", "Property Manager"] else "tenant rights and protections"
 
         prompt = f"""
-
 You are a legal assistant trained in {state} {lens}.
 The user is a {role.lower()} reviewing a residential lease in {state}.
 
@@ -195,6 +186,7 @@ Analyze the LEASE TEXT for compliance with the checklist below.
   - 🟢 Compliant: ...
 - Do not use paragraphs, explanations, or numbering.
 - No headings, no intros, no summaries — just the bullet list.
+- Do not quote or restate any lease text. Output ONLY the bullet list items.
 
 CHECKLIST (NJ):
 {NJ_RULES}
@@ -209,27 +201,42 @@ LEASE TEXT:
                     model="gpt-4",
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.2,
-                    max_tokens=800
+                    max_tokens=900
                 )
-                result = response.choices[0].message.content
-                cleaned_result = "\n".join(dict.fromkeys(result.strip().split("\n")))
+                result = response.choices[0].message.content or ""
 
+                # === FORCE BULLET LIST FORMAT, NO LEASE ECHO ===
+                text = result
+
+                # 1) Strip any preface or echoed lease by cutting to first emoji
+                first_positions = [i for i in [text.find("🔴"), text.find("🟡"), text.find("🟢")] if i != -1]
+                if first_positions:
+                    text = text[min(first_positions):]
+
+                # 2) Ensure every emoji starts a new "- " bullet line
+                for emoji in ["🔴", "🟡", "🟢"]:
+                    text = text.replace(emoji, f"\n- {emoji} ")
+
+                # 3) Split, strip, and keep only proper bullet lines
+                lines = [ln.strip() for ln in text.splitlines()]
+                cleaned_lines = [ln for ln in lines if ln.startswith("- 🔴") or ln.startswith("- 🟡") or ln.startswith("- 🟢")]
+
+                # 4) Join back to final cleaned result
+                cleaned_result = "\n".join(cleaned_lines) if cleaned_lines else ""
+
+                # === DISPLAY ===
                 st.markdown("### 📊 Step 2: Lease Analysis Results")
-                # NEW: show context so PMs can tie report to a property
-                st.write(f"📍 **Property:** {property_address or 'N/A'}  |  🏢 **Units:** {num_units}  |  🧑 **Role:** {role}")  # NEW
-                st.markdown(cleaned_result)
-                
-                # === MINI-STEP: COMPLIANCE SUMMARY BADGE ===
-                # Count how many risks and compliant clauses the AI returned
+                st.write(f"📍 **Property:** {property_address or 'N/A'}  |  🏢 **Units:** {num_units}  |  🧑 **Role:** {role}")
+
+                # Summary badge BEFORE the list
                 critical_count = cleaned_result.count("🔴")
                 warning_count = cleaned_result.count("🟡")
                 compliant_count = cleaned_result.count("🟢")
-                
-                # Display a summary banner
+
                 st.markdown(
                     f"""
                     <div style='background-color:#f7f7f7; padding:12px; border-radius:10px; 
-                                border:1px solid #ddd; margin-bottom:10px;'>
+                                border:1px solid #ddd; margin:10px 0;'>
                       <b>Compliance Summary</b><br>
                       🔴 <b>Critical:</b> {critical_count} &nbsp;&nbsp;
                       🟡 <b>Warnings:</b> {warning_count} &nbsp;&nbsp;
@@ -238,6 +245,12 @@ LEASE TEXT:
                     """,
                     unsafe_allow_html=True
                 )
+
+                # Now the cleaned bullet list
+                if cleaned_result:
+                    st.markdown(cleaned_result)
+                else:
+                    st.warning("No clearly formatted items were returned. Try a different lease or re-run analysis.")
 
                 st.markdown("ℹ️ This analysis is for informational purposes only and does not constitute legal advice.")
 
@@ -258,13 +271,14 @@ LEASE TEXT:
                             Paragraph(f"Property: {property_address or 'N/A'} | Units: {num_units}", styles["Normal"]),
                             Spacer(1, 12)
                         ]
-                        for line in content.split("\n"):
-                            elements.append(Paragraph(line, styles["Normal"]))
+                        for line in (content or "").split("\n"):
+                            if line.strip():
+                                elements.append(Paragraph(line, styles["Normal"]))
                         doc.build(elements)
                         buffer.seek(0)
                         return buffer
 
-                    pdf_data = generate_pdf(cleaned_result, email, role, state, property_address, num_units)  # NEW: pass metadata
+                    pdf_data = generate_pdf(cleaned_result, email, role, state, property_address, num_units)
                     st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
             except RateLimitError:
                 st.error("Too many requests. Please wait and try again.")
