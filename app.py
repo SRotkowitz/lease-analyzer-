@@ -5,11 +5,27 @@ from io import BytesIO
 import PyPDF2
 from openai import OpenAI, RateLimitError
 import requests
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle  # NEW
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors  # NEW
 from PIL import Image
 import time
+import pandas as pd  # NEW
+
+# === helpers ===  # NEW
+def parse_bullets_to_rows(text: str):
+    """Turn '- 🔴/🟡/🟢 ...' lines into (Severity, Item) rows."""
+    rows = []
+    for ln in (text or "").split("\n"):
+        ln = ln.strip()
+        if ln.startswith("- 🔴"):
+            rows.append(("Critical", ln.replace("- 🔴", "").strip()))
+        elif ln.startswith("- 🟡"):
+            rows.append(("Warning", ln.replace("- 🟡", "").strip()))
+        elif ln.startswith("- 🟢"):
+            rows.append(("Compliant", ln.replace("- 🟢", "").strip()))
+    return rows
 
 # --- PAGE CONFIG (keep only one set_page_config) ---
 st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer", layout="centered")
@@ -246,7 +262,15 @@ LEASE TEXT:
                     unsafe_allow_html=True
                 )
 
-                # Now the cleaned bullet list
+                # NEW: Table view for PMs
+                rows = parse_bullets_to_rows(cleaned_result)  # NEW
+                if rows:  # NEW
+                    df = pd.DataFrame(rows, columns=["Severity", "Item"])  # NEW
+                    st.dataframe(df, use_container_width=True)  # NEW
+                else:  # NEW
+                    st.info("No items parsed into table.")  # NEW
+
+                # Keep bullet list too (some users prefer it)
                 if cleaned_result:
                     st.markdown(cleaned_result)
                 else:
@@ -254,7 +278,7 @@ LEASE TEXT:
 
                 st.markdown("ℹ️ This analysis is for informational purposes only and does not constitute legal advice.")
 
-                # === EMAIL → PDF DELIVERY (kept) ===
+                # === EMAIL → PDF DELIVERY (kept, but upgraded table inside) ===
                 email = st.text_input("Enter your email to download this report as a PDF:")
                 if email and "@" in email and "." in email:
                     save_email(email)
@@ -262,18 +286,44 @@ LEASE TEXT:
 
                     def generate_pdf(content, email, role, state, property_address, num_units):
                         buffer = BytesIO()
-                        doc = SimpleDocTemplate(buffer, pagesize=letter)
+                        doc = SimpleDocTemplate(
+                            buffer,
+                            pagesize=letter,
+                            leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36
+                        )
                         styles = getSampleStyleSheet()
                         elements = [
-                            Paragraph("Lease Analysis Report", styles["Heading1"]),
+                            Paragraph("NJ Lease Compliance Report", styles["Heading1"]),
                             Paragraph(f"State: {state}", styles["Normal"]),
                             Paragraph(f"User: {email} ({role})", styles["Normal"]),
                             Paragraph(f"Property: {property_address or 'N/A'} | Units: {num_units}", styles["Normal"]),
                             Spacer(1, 12)
                         ]
-                        for line in (content or "").split("\n"):
-                            if line.strip():
-                                elements.append(Paragraph(line, styles["Normal"]))
+
+                        # Build table from bullets
+                        table_rows = parse_bullets_to_rows(content)
+                        data = [["Severity", "Item"]]
+                        for sev, item in table_rows:
+                            data.append([sev, item])
+
+                        if len(data) > 1:
+                            tbl = Table(data, colWidths=[90, 420])
+                            tbl.setStyle(TableStyle([
+                                ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f0f0f0")),
+                                ("TEXTCOLOR", (0,0), (-1,0), colors.black),
+                                ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+                                ("ALIGN", (0,0), (0,-1), "LEFT"),
+                                ("VALIGN", (0,0), (-1,-1), "TOP"),
+                                ("GRID", (0,0), (-1,-1), 0.5, colors.HexColor("#cccccc")),
+                                ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, colors.HexColor("#fafafa")]),
+                            ]))
+                            elements.append(tbl)
+                        else:
+                            elements.append(Paragraph("No findings to report.", styles["Normal"]))
+
+                        elements.append(Spacer(1, 12))
+                        elements.append(Paragraph("Note: This report is informational and not legal advice.", styles["Italic"]))
+
                         doc.build(elements)
                         buffer.seek(0)
                         return buffer
