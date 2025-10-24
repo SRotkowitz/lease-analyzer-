@@ -12,20 +12,39 @@ from reportlab.lib import colors
 from PIL import Image
 import time
 import pandas as pd
+import json
+import re
 
 # === helpers ===
-def parse_bullets_to_rows(text: str):
-    """Turn '- 🔴/🟡/🟢 ...' lines into (Severity, Item) rows."""
+EMOJI = {"critical": "🔴", "warning": "🟡", "compliant": "🟢"}
+
+def issues_to_bullets(issues):
+    bullets = []
+    for it in issues:
+        sev = (it.get("severity") or "").lower()
+        check = (it.get("check") or "").strip()
+        finding = (it.get("finding") or "").strip()
+        why = (it.get("why") or "").strip()
+        bullets.append(f"- {EMOJI.get(sev, '•')} {sev.title()}: {check} — {finding}. {why}")
+    return "\n".join([b for b in bullets if b.strip()])
+
+def issues_to_rows(issues):
+    """Turn issues into (Severity, Item) rows for table/PDF."""
     rows = []
-    for ln in (text or "").split("\n"):
-        ln = ln.strip()
-        if ln.startswith("- 🔴"):
-            rows.append(("Critical", ln.replace("- 🔴", "").strip()))
-        elif ln.startswith("- 🟡"):
-            rows.append(("Warning", ln.replace("- 🟡", "").strip()))
-        elif ln.startswith("- 🟢"):
-            rows.append(("Compliant", ln.replace("- 🟢", "").strip()))
+    for it in issues:
+        sev = (it.get("severity") or "").capitalize()
+        check = (it.get("check") or "").strip()
+        finding = (it.get("finding") or "").strip()
+        why = (it.get("why") or "").strip()
+        text = f"{check} — {finding}. {why}".strip(" .")
+        rows.append((sev, text))
     return rows
+
+def count_by_severity(issues):
+    crit = sum(1 for i in issues if (i.get("severity") or "").lower() == "critical")
+    warn = sum(1 for i in issues if (i.get("severity") or "").lower() == "warning")
+    comp = sum(1 for i in issues if (i.get("severity") or "").lower() == "compliant")
+    return crit, warn, comp
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer", layout="centered")
@@ -34,21 +53,15 @@ st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer"
 st.markdown(
     """
     <style>
-    /* Add some breathing room around the whole page */
-    div[data-testid="stAppViewContainer"] {
-        padding: 12px;
-        background: #f5f5f5; /* subtle page background so the white card pops */
-    }
-
-    /* Old & new main content containers */
+    div[data-testid="stAppViewContainer"] { padding: 12px; background: #f5f5f5; }
     div.block-container,
     section.main > div.block-container,
     div[data-testid="stAppViewContainer"] .block-container {
-        border: 3px solid #2E8B57;       /* green border */
+        border: 3px solid #2E8B57;
         border-radius: 16px;
-        padding: 24px !important;        /* ensure inner spacing */
-        background: #ffffff;             /* white card */
-        box-shadow: 0 2px 8px rgba(0,0,0,0.03); /* subtle lift */
+        padding: 24px !important;
+        background: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     }
     </style>
     """,
@@ -179,12 +192,13 @@ if st.session_state.get("scroll_to_form"):
 
         property_address = st.text_input("Property Address (optional)")
         num_units = st.number_input("Number of Units", min_value=1, step=1, value=1)
+        year_built = st.number_input("Year Built (optional, helps lead-paint checks)", min_value=1800, max_value=2100, value=1975, step=1)
 
         uploaded_file = st.file_uploader("Upload Lease (PDF or DOCX)", type=["pdf", "docx"])
         submitted = st.form_submit_button("🔍 Analyze Lease", type="primary")
 
     if uploaded_file and submitted:
-        # Extract text (PDF path shown; DOCX minimal fallback)
+        # Extract text
         lease_text = ""
         try:
             if uploaded_file.name.lower().endswith(".pdf"):
@@ -199,24 +213,59 @@ if st.session_state.get("scroll_to_form"):
 
         log_user_action("anonymous", "Uploaded Lease")
 
-        # --- RULES / PROMPT (landlord-compliance tuned) ---
-        lens = "landlord compliance and liability" if role in ["Landlord", "Property Manager"] else "tenant rights and protections"
+        # --- HYBRID QUICK CHECKS (deterministic preflags) ---
+        quick_flags = []
+        # Confession of judgment (often unenforceable)
+        if re.search(r"confession of judgment", lease_text, re.I):
+            quick_flags.append({"severity": "critical", "check": "Illegal/Unenforceable Clause",
+                                "finding": "Confession of judgment language detected",
+                                "why": "Likely unenforceable in NJ"})
+        # Unlimited/anytime entry
+        if re.search(r"(any\s*time|at\s*any\s*time).{0,30}enter", lease_text, re.I):
+            quick_flags.append({"severity": "warning", "check": "Landlord Entry",
+                                "finding": "Unlimited/anytime entry language",
+                                "why": "Entry should include reasonable notice except emergencies"})
+        # Security deposit vs rent (simple heuristic)
+        m_dep = re.search(r"security\s+deposit[^$]*(\$[\d,]+|\d{3,6})", lease_text, re.I)
+        m_rent = re.search(r"rent[^$]*\$?([\d,]+)\s*/\s*month", lease_text, re.I)
+        try:
+            if m_dep and m_rent:
+                dep_str = re.search(r"([\d,]+)", m_dep.group(0)).group(1)
+                dep = float(dep_str.replace(",", ""))
+                rent = float(m_rent.group(1).replace(",", ""))
+                if dep > 1.5 * rent:
+                    quick_flags.append({"severity": "critical", "check": "Security Deposit Cap",
+                                        "finding": f"Deposit ${dep:.0f} exceeds 1.5× monthly rent (${1.5*rent:.0f})",
+                                        "why": "NJ cap = 1.5 months"})
+        except:
+            pass
+        # Lead paint disclosure check using year_built
+        if year_built and year_built < 1978 and "lead" not in lease_text.lower():
+            quick_flags.append({"severity": "warning", "check": "Lead-Based Paint Disclosure",
+                                "finding": "Disclosure not found in text",
+                                "why": "Required for pre-1978 units"})
 
-        prompt = f"""
-You are a legal assistant trained in {state} {lens}.
-The user is a {role.lower()} reviewing a residential lease in {state}.
+        # --- STRICT STRUCTURED ANALYSIS (JSON-only) ---
+        SYSTEM_MSG = {
+            "role": "system",
+            "content": (
+                "You are a compliance assistant for New Jersey residential leases. "
+                "Return JSON ONLY that conforms to this schema:\n"
+                "{"
+                "  'issues': ["
+                "    {'severity':'critical|warning|compliant', 'check':'string', 'finding':'string', 'why':'string'}"
+                "  ]"
+                "}\n"
+                "No prose. No headings. No extra keys."
+            ),
+        }
 
-Analyze the LEASE TEXT for compliance with the checklist below.
-
-⚠️ IMPORTANT — Your response must:
-- Start each issue on a **new line**
-- Always use this exact structure:
-  - 🔴 Critical Risk: ...
-  - 🟡 Warning: ...
-  - 🟢 Compliant: ...
-- Do not use paragraphs, explanations, or numbering.
-- No headings, no intros, no summaries — just the bullet list.
-- Do not quote or restate any lease text. Output ONLY the bullet list items.
+        USER_MSG = {
+            "role": "user",
+            "content": f"""
+Analyze the LEASE TEXT for compliance with the NJ checklist below.
+Focus on landlord exposure (fines, lawsuits, unenforceable clauses, missing disclosures).
+Return JSON only, following the schema exactly. No lease quotes, no extra commentary.
 
 CHECKLIST (NJ):
 {NJ_RULES}
@@ -224,128 +273,121 @@ CHECKLIST (NJ):
 LEASE TEXT:
 {lease_text}
 """
+        }
 
         with st.spinner("Analyzing lease..."):
             try:
                 response = client.chat.completions.create(
                     model="gpt-4",
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.2,
+                    messages=[SYSTEM_MSG, USER_MSG],
+                    temperature=0.1,
                     max_tokens=900
                 )
-                result = response.choices[0].message.content or ""
-
-                # === FORCE BULLET LIST FORMAT, NO LEASE ECHO ===
-                text = result
-
-                # 1) Strip any preface or echoed lease by cutting to first emoji
-                first_positions = [i for i in [text.find("🔴"), text.find("🟡"), text.find("🟢")] if i != -1]
-                if first_positions:
-                    text = text[min(first_positions):]
-
-                # 2) Ensure every emoji starts a new "- " bullet line
-                for emoji in ["🔴", "🟡", "🟢"]:
-                    text = text.replace(emoji, f"\n- {emoji} ")
-
-                # 3) Split, strip, and keep only proper bullet lines
-                lines = [ln.strip() for ln in text.splitlines()]
-                cleaned_lines = [ln for ln in lines if ln.startswith("- 🔴") or ln.startswith("- 🟡") or ln.startswith("- 🟢")]
-
-                # 4) Join back to final cleaned result
-                cleaned_result = "\n".join(cleaned_lines) if cleaned_lines else ""
-
-                # === DISPLAY ===
-                st.markdown("### 📊 Step 2: Lease Analysis Results")
-                st.write(f"📍 **Property:** {property_address or 'N/A'}  |  🏢 **Units:** {num_units}  |  🧑 **Role:** {role}")
-
-                # Summary badge BEFORE the list
-                critical_count = cleaned_result.count("🔴")
-                warning_count = cleaned_result.count("🟡")
-                compliant_count = cleaned_result.count("🟢")
-
-                st.markdown(
-                    f"""
-                    <div style='background-color:#f7f7f7; padding:12px; border-radius:10px; 
-                                border:1px solid #ddd; margin:10px 0;'>
-                      <b>Compliance Summary</b><br>
-                      🔴 <b>Critical:</b> {critical_count} &nbsp;&nbsp;
-                      🟡 <b>Warnings:</b> {warning_count} &nbsp;&nbsp;
-                      🟢 <b>Compliant:</b> {compliant_count}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-                # Table view for PMs
-                rows = parse_bullets_to_rows(cleaned_result)
-                if rows:
-                    df = pd.DataFrame(rows, columns=["Severity", "Item"])
-                    st.dataframe(df, use_container_width=True)
-                else:
-                    st.info("No items parsed into table.")
-
-                # Keep bullet list too
-                if cleaned_result:
-                    st.markdown(cleaned_result)
-                else:
-                    st.warning("No clearly formatted items were returned. Try a different lease or re-run analysis.")
-
-                st.markdown("ℹ️ This analysis is for informational purposes only and does not constitute legal advice.")
-
-                # === EMAIL → PDF DELIVERY (table layout) ===
-                email = st.text_input("Enter your email to download this report as a PDF:")
-                if email and "@" in email and "." in email:
-                    save_email(email)
-                    log_user_action(email, "Downloaded PDF Report")
-
-                    def generate_pdf(content, email, role, state, property_address, num_units):
-                        buffer = BytesIO()
-                        doc = SimpleDocTemplate(
-                            buffer,
-                            pagesize=letter,
-                            leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36
-                        )
-                        styles = getSampleStyleSheet()
-                        elements = [
-                            Paragraph("NJ Lease Compliance Report", styles["Heading1"]),
-                            Paragraph(f"State: {state}", styles["Normal"]),
-                            Paragraph(f"User: {email} ({role})", styles["Normal"]),
-                            Paragraph(f"Property: {property_address or 'N/A'} | Units: {num_units}", styles["Normal"]),
-                            Spacer(1, 12)
-                        ]
-
-                        # Build table from bullets
-                        table_rows = parse_bullets_to_rows(content)
-                        data = [["Severity", "Item"]]
-                        for sev, item in table_rows:
-                            data.append([sev, item])
-
-                        if len(data) > 1:
-                            tbl = Table(data, colWidths=[90, 420])
-                            tbl.setStyle(TableStyle([
-                                ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f0f0f0")),
-                                ("TEXTCOLOR", (0,0), (-1,0), colors.black),
-                                ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-                                ("ALIGN", (0,0), (0,-1), "LEFT"),
-                                ("VALIGN", (0,0), (-1,-1), "TOP"),
-                                ("GRID", (0,0), (-1,-1), 0.5, colors.HexColor("#cccccc")),
-                                ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, colors.HexColor("#fafafa")]),
-                            ]))
-                            elements.append(tbl)
-                        else:
-                            elements.append(Paragraph("No findings to report.", styles["Normal"]))
-
-                        elements.append(Spacer(1, 12))
-                        elements.append(Paragraph("Note: This report is informational and not legal advice.", styles["Italic"]))
-
-                        doc.build(elements)
-                        buffer.seek(0)
-                        return buffer
-
-                    pdf_data = generate_pdf(cleaned_result, email, role, state, property_address, num_units)
-                    st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf", type="primary")
+                raw = response.choices[0].message.content or "{}"
             except RateLimitError:
                 st.error("Too many requests. Please wait and try again.")
+                st.stop()
+
+        # Parse JSON with safe fallback
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            raw2 = raw.strip().strip("`").replace("json", "")
+            try:
+                data = json.loads(raw2)
+            except:
+                data = {"issues": []}
+
+        issues = data.get("issues", [])
+        # Merge quick flags
+        issues.extend(quick_flags)
+
+        # === DISPLAY ===
+        st.markdown("### 📊 Step 2: Lease Analysis Results")
+        st.write(f"📍 **Property:** {property_address or 'N/A'}  |  🏢 **Units:** {num_units}  |  🧑 **Role:** {role}  |  🏗️ **Year Built:** {year_built or 'N/A'}")
+
+        # Summary badge
+        crit, warn, comp = count_by_severity(issues)
+        st.markdown(
+            f"""
+            <div style='background-color:#f7f7f7; padding:12px; border-radius:10px; 
+                        border:1px solid #ddd; margin:10px 0;'>
+              <b>Compliance Summary</b><br>
+              🔴 <b>Critical:</b> {crit} &nbsp;&nbsp;
+              🟡 <b>Warnings:</b> {warn} &nbsp;&nbsp;
+              🟢 <b>Compliant:</b> {comp}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Table view
+        rows = issues_to_rows(issues)
+        if rows:
+            df = pd.DataFrame(rows, columns=["Severity", "Item"])
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.info("No items parsed into table.")
+
+        # Bullets (nice for quick scan)
+        bullets = issues_to_bullets(issues)
+        if bullets:
+            st.markdown(bullets)
+        else:
+            st.warning("No findings returned. Try a different lease or re-run analysis.")
+
+        st.markdown("ℹ️ This analysis is for informational purposes only and does not constitute legal advice.")
+
+        # === EMAIL → PDF DELIVERY (table layout) ===
+        email = st.text_input("Enter your email to download this report as a PDF:")
+        if email and "@" in email and "." in email:
+            save_email(email)
+            log_user_action(email, "Downloaded PDF Report")
+
+            def generate_pdf(issues_list, email, role, state, property_address, num_units, year_built):
+                buffer = BytesIO()
+                doc = SimpleDocTemplate(
+                    buffer,
+                    pagesize=letter,
+                    leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36
+                )
+                styles = getSampleStyleSheet()
+                elements = [
+                    Paragraph("NJ Lease Compliance Report", styles["Heading1"]),
+                    Paragraph(f"State: {state}", styles["Normal"]),
+                    Paragraph(f"User: {email} ({role})", styles["Normal"]),
+                    Paragraph(f"Property: {property_address or 'N/A'} | Units: {num_units} | Year Built: {year_built}", styles["Normal"]),
+                    Spacer(1, 12)
+                ]
+                table_rows = issues_to_rows(issues_list)
+                data = [["Severity", "Item"]]
+                for sev, item in table_rows:
+                    data.append([sev, item])
+
+                if len(data) > 1:
+                    tbl = Table(data, colWidths=[90, 420])
+                    tbl.setStyle(TableStyle([
+                        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f0f0f0")),
+                        ("TEXTCOLOR", (0,0), (-1,0), colors.black),
+                        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+                        ("ALIGN", (0,0), (0,-1), "LEFT"),
+                        ("VALIGN", (0,0), (-1,-1), "TOP"),
+                        ("GRID", (0,0), (-1,-1), 0.5, colors.HexColor("#cccccc")),
+                        ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, colors.HexColor("#fafafa")]),
+                    ]))
+                    elements.append(tbl)
+                else:
+                    elements.append(Paragraph("No findings to report.", styles["Normal"]))
+
+                elements.append(Spacer(1, 12))
+                elements.append(Paragraph("Note: This report is informational and not legal advice.", styles["Italic"]))
+
+                doc.build(elements)
+                buffer.seek(0)
+                return buffer
+
+            pdf_data = generate_pdf(issues, email, role, state, property_address, num_units, year_built)
+            st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf", type="primary")
 
 st.divider()
 
