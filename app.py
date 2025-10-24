@@ -5,15 +5,15 @@ from io import BytesIO
 import PyPDF2
 from openai import OpenAI, RateLimitError
 import requests
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle  # NEW
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors  # NEW
+from reportlab.lib import colors
 from PIL import Image
 import time
-import pandas as pd  # NEW
+import pandas as pd
 
-# === helpers ===  # NEW
+# === helpers ===
 def parse_bullets_to_rows(text: str):
     """Turn '- 🔴/🟡/🟢 ...' lines into (Severity, Item) rows."""
     rows = []
@@ -27,7 +27,7 @@ def parse_bullets_to_rows(text: str):
             rows.append(("Compliant", ln.replace("- 🟢", "").strip()))
     return rows
 
-# --- PAGE CONFIG (keep only one set_page_config) ---
+# --- PAGE CONFIG ---
 st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer", layout="centered")
 
 # === NJ LANDLORD COMPLIANCE RULES (used in prompt) ===
@@ -105,56 +105,26 @@ def save_email(email):
     except:
         st.warning("Failed to save email.")
 
-# --- SCROLL TO FORM CTA (kept) ---
-if "scroll_to_form" not in st.session_state:
-    st.session_state.scroll_to_form = False
-
+# --- Green promo box above CTA ---
 st.markdown("""
-<div style='background-color:#90EE90; padding: 20px; border-radius: 10px; border: 1px solid #eee; text-align: center; margin-top: 20px;'>
+<div style='background-color:#90EE90; padding: 20px; border-radius: 10px; border: 1px solid #2E8B57; text-align: center; margin-top: 20px;'>
   <h4 style='margin-bottom: 10px;'>📄 Upload Your Lease Now</h4>
-  <p style='font-size: 16px; margin-top: 0;'>We’ll scan it for red flags based on NJ/PA law.<br>No signup required.</p>
+  <p style='font-size: 16px; margin-top: 0;'>We’ll scan it for red flags based on NJ law.<br>No signup required.</p>
 </div>
 """, unsafe_allow_html=True)
 
-# --- Start Lease Check Button (centered + styled) ---
-st.markdown(
-    """
-    <style>
-    /* Only style the CTA button inside the #cta container */
-    #cta div.stButton > button:first-child {
-        background-color: #28a745 !important;
-        color: white !important;
-        padding: 0.8em 2em !important;
-        font-size: 1.2em !important;
-        font-weight: bold !important;
-        border-radius: 10px !important;
-        border: none !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-        cursor: pointer !important;
-        transition: 0.2s !important;
-    }
-    #cta div.stButton > button:first-child:hover {
-        background-color: #218838 !important;
-        transform: translateY(-2px) !important;
-    }
-    </style>
-    <div id="cta" style="text-align: center; margin: 30px 0;">
-    """,
-    unsafe_allow_html=True
-)
-
-if st.button("🚀 Start Lease Check", key="cta_start"):
+# --- Start Lease Check (native primary button, centered) ---
+st.markdown("<div style='text-align:center; margin: 30px 0;'>", unsafe_allow_html=True)
+if st.button("🚀 Start Lease Check", key="cta_start", type="primary", use_container_width=False):
     log_user_action("anonymous", "Clicked Start Lease Check")
     st.session_state.scroll_to_form = True
-
 st.markdown("</div>", unsafe_allow_html=True)
 
-
-# --- SAMPLE LEASE REPORT (kept) ---
-if st.session_state.scroll_to_form:
+# --- SAMPLE LEASE REPORT ---
+if st.session_state.get("scroll_to_form"):
     st.markdown("---")
     st.markdown("### 👀 Try a Sample Lease")
-    if st.button("🧾 View Sample Lease Report"):
+    if st.button("🧾 View Sample Lease Report", type="secondary"):
         log_user_action("anonymous", "Viewed Sample Lease")
         st.markdown("#### ⚠️ Potential Issues")
         st.markdown("""
@@ -170,9 +140,9 @@ if st.session_state.scroll_to_form:
 """)
 
 # =========================
-# === STEP 2: UPLOAD FORM with METADATA (NEW) ===
+# === STEP 2: UPLOAD FORM with METADATA ===
 # =========================
-if st.session_state.scroll_to_form:
+if st.session_state.get("scroll_to_form"):
     st.markdown("### Step 1: Upload Your Lease")
 
     with st.form("lease_upload_form"):
@@ -186,7 +156,7 @@ if st.session_state.scroll_to_form:
         num_units = st.number_input("Number of Units", min_value=1, step=1, value=1)
 
         uploaded_file = st.file_uploader("Upload Lease (PDF or DOCX)", type=["pdf", "docx"])
-        submitted = st.form_submit_button("🔍 Analyze Lease")
+        submitted = st.form_submit_button("🔍 Analyze Lease", type="primary")
 
     if uploaded_file and submitted:
         # Extract text (PDF path shown; DOCX minimal fallback)
@@ -281,15 +251,15 @@ LEASE TEXT:
                     unsafe_allow_html=True
                 )
 
-                # NEW: Table view for PMs
-                rows = parse_bullets_to_rows(cleaned_result)  # NEW
-                if rows:  # NEW
-                    df = pd.DataFrame(rows, columns=["Severity", "Item"])  # NEW
-                    st.dataframe(df, use_container_width=True)  # NEW
-                else:  # NEW
-                    st.info("No items parsed into table.")  # NEW
+                # Table view for PMs
+                rows = parse_bullets_to_rows(cleaned_result)
+                if rows:
+                    df = pd.DataFrame(rows, columns=["Severity", "Item"])
+                    st.dataframe(df, use_container_width=True)
+                else:
+                    st.info("No items parsed into table.")
 
-                # Keep bullet list too (some users prefer it)
+                # Keep bullet list too
                 if cleaned_result:
                     st.markdown(cleaned_result)
                 else:
@@ -297,7 +267,7 @@ LEASE TEXT:
 
                 st.markdown("ℹ️ This analysis is for informational purposes only and does not constitute legal advice.")
 
-                # === EMAIL → PDF DELIVERY (kept, but upgraded table inside) ===
+                # === EMAIL → PDF DELIVERY (table layout) ===
                 email = st.text_input("Enter your email to download this report as a PDF:")
                 if email and "@" in email and "." in email:
                     save_email(email)
@@ -348,11 +318,11 @@ LEASE TEXT:
                         return buffer
 
                     pdf_data = generate_pdf(cleaned_result, email, role, state, property_address, num_units)
-                    st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf")
+                    st.download_button("📄 Download Lease Analysis as PDF", pdf_data, "lease_analysis.pdf", type="primary")
             except RateLimitError:
                 st.error("Too many requests. Please wait and try again.")
 
-# --- TESTIMONIAL ROTATION (kept) ---
+# --- Testimonials ---
 if "testimonial_index" not in st.session_state:
     st.session_state.testimonial_index = 0
 
@@ -371,41 +341,13 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Testimonial Button (subtle link style, SCOPED) ---
-st.markdown(
-    """
-    <style>
-    /* Make ONLY the testimonial button look like a link */
-    #testimonial div.stButton > button:first-child {
-        background-color: transparent !important;
-        color: #555 !important;
-        font-size: 0.9em !important;
-        font-weight: normal !important;
-        border: none !important;
-        padding: 0.2em 0.5em !important;
-        text-decoration: underline !important;
-        box-shadow: none !important;
-        transform: none !important;
-    }
-    #testimonial div.stButton > button:first-child:hover {
-        color: #000 !important;
-        text-decoration: none !important;
-        background-color: transparent !important;
-    }
-    </style>
-    <div id="testimonial" style="text-align:center;">
-    """,
-    unsafe_allow_html=True
-)
-
-if st.button("Next Testimonial", key="testimonial_next"):
+# Testimonial button (native secondary, subtle)
+st.markdown('<div style="text-align:center;">', unsafe_allow_html=True)
+if st.button("Next Testimonial", key="testimonial_next", type="secondary"):
     st.session_state.testimonial_index = (st.session_state.testimonial_index + 1) % len(testimonials)
-
 st.markdown("</div>", unsafe_allow_html=True)
 
-
-
-# --- TRUST BOX (kept) ---
+# --- Light trust box (kept) ---
 st.markdown("""
 <div style='background-color: #e6f2ff; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;'>
   <strong>✅ Created by NJ & PA-Trained Legal Professionals</strong><br>
@@ -414,7 +356,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Disclaimer Box (fixed) ---
+# --- Disclaimer (yellow) ---
 st.markdown("""
 <div style='background-color: #FFF8DC; padding: 16px; border-radius: 10px; 
             border: 1px solid #FFD700; margin-top: 30px; font-size: 14px;'>
@@ -422,4 +364,3 @@ st.markdown("""
   <strong>Privacy:</strong> We do not store your documents or results. Only your email is recorded temporarily for usage tracking.
 </div>
 """, unsafe_allow_html=True)
-
