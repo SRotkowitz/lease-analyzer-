@@ -356,10 +356,12 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Disclaimer Box (kept) ---
+# --- Disclaimer Box (fixed) ---
 st.markdown("""
-<div style='background-color: #FFFF00; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;'>
-    **Disclaimer:** This lease analysis is for informational purposes only and does not constitute legal advice.  
-    **Privacy:** We do not store your documents or results. Only your email is recorded temporarily for usage tracking.
+<div style='background-color: #FFF8DC; padding: 16px; border-radius: 10px; 
+            border: 1px solid #FFD700; margin-top: 30px; font-size: 14px;'>
+  <strong>Disclaimer:</strong> This lease analysis is for informational purposes only and does not constitute legal advice.<br>
+  <strong>Privacy:</strong> We do not store your documents or results. Only your email is recorded temporarily for usage tracking.
 </div>
-""")
+""", unsafe_allow_html=True)
+
