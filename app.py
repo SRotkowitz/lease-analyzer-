@@ -370,34 +370,37 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Testimonial Button (subtle style) ---
+# --- Testimonial Button (subtle style, overrides global button CSS) ---
 st.markdown(
     """
     <style>
-    div.testimonial-button button {
-        background-color: transparent;
-        color: #555;
-        font-size: 0.9em;
-        border: none;
-        padding: 0.2em 0.5em;
-        text-decoration: underline;
-        cursor: pointer;
+    /* Scoped styling only for testimonial button */
+    div[data-testid="stVerticalBlock"] div.testimonial-button button {
+        background-color: transparent !important;
+        color: #555 !important;
+        font-size: 0.9em !important;
+        font-weight: normal !important;
+        border: none !important;
+        padding: 0.2em 0.5em !important;
+        text-decoration: underline !important;
+        box-shadow: none !important;
     }
-    div.testimonial-button button:hover {
-        color: #000;
-        text-decoration: none;
+    div[data-testid="stVerticalBlock"] div.testimonial-button button:hover {
+        color: #000 !important;
+        text-decoration: none !important;
+        background-color: transparent !important;
+        transform: none !important;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Use a container with a custom class for targeted styling
-with st.container():
-    st.markdown('<div class="testimonial-button">', unsafe_allow_html=True)
-    if st.button("Next Testimonial", key="testimonial_next"):
-        st.session_state.testimonial_index = (st.session_state.testimonial_index + 1) % len(testimonials)
-    st.markdown('</div>', unsafe_allow_html=True)
+# Container for testimonial button
+st.markdown('<div class="testimonial-button" style="text-align:center;">', unsafe_allow_html=True)
+if st.button("Next Testimonial", key="testimonial_next"):
+    st.session_state.testimonial_index = (st.session_state.testimonial_index + 1) % len(testimonials)
+st.markdown('</div>', unsafe_allow_html=True)
 
 
 # --- TRUST BOX (kept) ---
