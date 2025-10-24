@@ -322,6 +322,15 @@ LEASE TEXT:
             except RateLimitError:
                 st.error("Too many requests. Please wait and try again.")
 
+# --- Light trust box (kept) ---
+st.markdown("""
+<div style='background-color: #e6f2ff; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;'>
+  <strong>✅ Created by NJ & PA-Trained Legal Professionals</strong><br>
+  Trusted by over <strong>1,200+ landlords and tenants</strong> to flag risky or illegal lease clauses.<br><br>
+  Fast. Confidential. No documents stored.
+</div>
+""", unsafe_allow_html=True)
+
 # --- Testimonials ---
 if "testimonial_index" not in st.session_state:
     st.session_state.testimonial_index = 0
@@ -346,15 +355,6 @@ st.markdown('<div style="text-align:center;">', unsafe_allow_html=True)
 if st.button("Next Testimonial", key="testimonial_next", type="secondary"):
     st.session_state.testimonial_index = (st.session_state.testimonial_index + 1) % len(testimonials)
 st.markdown("</div>", unsafe_allow_html=True)
-
-# --- Light trust box (kept) ---
-st.markdown("""
-<div style='background-color: #e6f2ff; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;'>
-  <strong>✅ Created by NJ & PA-Trained Legal Professionals</strong><br>
-  Trusted by over <strong>1,200+ landlords and tenants</strong> to flag risky or illegal lease clauses.<br><br>
-  Fast. Confidential. No documents stored.
-</div>
-""", unsafe_allow_html=True)
 
 # --- Disclaimer (yellow) ---
 st.markdown("""
