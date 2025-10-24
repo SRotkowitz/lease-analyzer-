@@ -357,6 +357,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown("""
-**Disclaimer:** This lease analysis is for informational purposes only and does not constitute legal advice.  
-**Privacy:** We do not store your documents or results. Only your email is recorded temporarily for usage tracking.
+<div style='background-color: #FFFF00; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;'>
+    **Disclaimer:** This lease analysis is for informational purposes only and does not constitute legal advice.  
+    **Privacy:** We do not store your documents or results. Only your email is recorded temporarily for usage tracking.
+</div>
 """)
