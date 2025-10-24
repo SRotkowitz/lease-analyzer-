@@ -89,13 +89,6 @@ def save_email(email):
     except:
         st.warning("Failed to save email.")
 
-# --- BANNER IMAGE ---
-try:
-    banner = Image.open("banner.png")
-    st.image(banner, use_container_width=True)
-except Exception:
-    pass  # banner is optional; don't break if missing
-
 # --- TRUST BOX (kept) ---
 st.markdown("""
 <div style='background-color: #e6f2ff; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;'>
