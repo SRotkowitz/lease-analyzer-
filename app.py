@@ -30,6 +30,22 @@ def parse_bullets_to_rows(text: str):
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer", layout="centered")
 
+# --- Global app container styling ---
+st.markdown(
+    """
+    <style>
+    .main {
+        border: 2px solid #ccc;        /* Border color */
+        border-radius: 15px;           /* Rounded corners */
+        padding: 20px;                 /* Space inside */
+        margin-top: 10px;
+        background-color: white;      /* Optional: makes content stand out */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # === NJ LANDLORD COMPLIANCE RULES (used in prompt) ===
 NJ_RULES = """
 Check the lease for these New Jersey compliance areas and report clearly:
