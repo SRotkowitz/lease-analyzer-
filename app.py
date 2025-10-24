@@ -188,7 +188,6 @@ if st.session_state.scroll_to_form:
         lens = "landlord compliance and liability" if role in ["Landlord", "Property Manager"] else "tenant rights and protections"  # NEW
 
         prompt = f"""
-prompt = f"""
 You are a legal assistant trained in {state} {lens}.
 The user is a {role.lower()} reviewing a residential lease in {state}.
 Analyze the LEASE TEXT for compliance with the checklist below.
