@@ -30,17 +30,25 @@ def parse_bullets_to_rows(text: str):
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer", layout="centered")
 
-# --- Global app container styling (border around entire app) ---
+# --- Global app border (works across Streamlit versions) ---
 st.markdown(
     """
     <style>
-    /* Target the main content container in Streamlit */
-    div[data-testid="stAppViewContainer"] > div:nth-child(1) > div {
-        border: 3px solid #2E8B57;     /* green border */
-        border-radius: 15px;
-        padding: 25px;
-        margin-top: 15px;
-        background-color: #ffffff;
+    /* Add some breathing room around the whole page */
+    div[data-testid="stAppViewContainer"] {
+        padding: 12px;
+        background: #f5f5f5; /* subtle page background so the white card pops */
+    }
+
+    /* Old & new main content containers */
+    div.block-container,
+    section.main > div.block-container,
+    div[data-testid="stAppViewContainer"] .block-container {
+        border: 3px solid #2E8B57;       /* green border */
+        border-radius: 16px;
+        padding: 24px !important;        /* ensure inner spacing */
+        background: #ffffff;             /* white card */
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03); /* subtle lift */
     }
     </style>
     """,
