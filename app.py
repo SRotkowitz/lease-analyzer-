@@ -116,38 +116,38 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Start Lease Check Button (centered + styled) ---
+# --- Start Lease Check Button (centered + styled, SCOPED) ---
 st.markdown(
     """
     <style>
-    div.stButton > button:first-child {
-        background-color: #28a745; /* nice green */
-        color: white;
-        padding: 0.8em 2em;
-        font-size: 1.2em;
-        font-weight: bold;
-        border-radius: 10px;
-        border: none;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        cursor: pointer;
-        transition: 0.2s;
+    /* Style ONLY the CTA button inside #cta */
+    #cta div.stButton > button:first-child {
+        background-color: #28a745 !important;  /* green */
+        color: white !important;
+        padding: 0.8em 2em !important;
+        font-size: 1.2em !important;
+        font-weight: bold !important;
+        border-radius: 10px !important;
+        border: none !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        cursor: pointer !important;
+        transition: 0.2s !important;
     }
-    div.stButton > button:first-child:hover {
-        background-color: #218838; /* darker green on hover */
-        transform: translateY(-2px);
+    #cta div.stButton > button:first-child:hover {
+        background-color: #218838 !important;  /* darker on hover */
+        transform: translateY(-2px) !important;
     }
     </style>
-    <div style='text-align: center; margin-top: 30px; margin-bottom: 30px;'>
+    <div id="cta" style="text-align: center; margin: 30px 0;">
     """,
     unsafe_allow_html=True
 )
 
-if st.button("🚀 Start Lease Check"):
+if st.button("🚀 Start Lease Check", key="cta_start"):
     log_user_action("anonymous", "Clicked Start Lease Check")
     st.session_state.scroll_to_form = True
 
 st.markdown("</div>", unsafe_allow_html=True)
-
 
 # --- SAMPLE LEASE REPORT (kept) ---
 if st.session_state.scroll_to_form:
@@ -370,12 +370,12 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Testimonial Button (subtle style, overrides global button CSS) ---
+# --- Testimonial Button (subtle link style, SCOPED) ---
 st.markdown(
     """
     <style>
-    /* Scoped styling only for testimonial button */
-    div[data-testid="stVerticalBlock"] div.testimonial-button button {
+    /* Make ONLY the testimonial button look like a link */
+    #testimonial div.stButton > button:first-child {
         background-color: transparent !important;
         color: #555 !important;
         font-size: 0.9em !important;
@@ -384,23 +384,24 @@ st.markdown(
         padding: 0.2em 0.5em !important;
         text-decoration: underline !important;
         box-shadow: none !important;
+        transform: none !important;
     }
-    div[data-testid="stVerticalBlock"] div.testimonial-button button:hover {
+    #testimonial div.stButton > button:first-child:hover {
         color: #000 !important;
         text-decoration: none !important;
         background-color: transparent !important;
-        transform: none !important;
     }
     </style>
+    <div id="testimonial" style="text-align:center;">
     """,
     unsafe_allow_html=True
 )
 
-# Container for testimonial button
-st.markdown('<div class="testimonial-button" style="text-align:center;">', unsafe_allow_html=True)
 if st.button("Next Testimonial", key="testimonial_next"):
     st.session_state.testimonial_index = (st.session_state.testimonial_index + 1) % len(testimonials)
-st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 # --- TRUST BOX (kept) ---
