@@ -116,13 +116,13 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Start Lease Check Button (centered + styled, SCOPED) ---
+# --- Start Lease Check Button (centered + styled) ---
 st.markdown(
     """
     <style>
-    /* Style ONLY the CTA button inside #cta */
+    /* Only style the CTA button inside the #cta container */
     #cta div.stButton > button:first-child {
-        background-color: #28a745 !important;  /* green */
+        background-color: #28a745 !important;
         color: white !important;
         padding: 0.8em 2em !important;
         font-size: 1.2em !important;
@@ -134,7 +134,7 @@ st.markdown(
         transition: 0.2s !important;
     }
     #cta div.stButton > button:first-child:hover {
-        background-color: #218838 !important;  /* darker on hover */
+        background-color: #218838 !important;
         transform: translateY(-2px) !important;
     }
     </style>
@@ -148,6 +148,7 @@ if st.button("🚀 Start Lease Check", key="cta_start"):
     st.session_state.scroll_to_form = True
 
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 # --- SAMPLE LEASE REPORT (kept) ---
 if st.session_state.scroll_to_form:
