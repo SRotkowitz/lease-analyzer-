@@ -117,7 +117,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Add vertical space and proper centering for the Start button
-st.markdown("<div style='margin-top: 20px; margin-bottom: 20px; text-align: center;'>", unsafe_allow_html=True)
+st.markdown
+    st.markdown(
+    "<div style='margin-top: 30px; margin-bottom: 20px; text-align: center;'>"
+    "<style>div.stButton > button:first-child {padding: 0.6em 1.5em; font-size: 1.1em;}</style>",
+    unsafe_allow_html=True
+)
 if st.button("🚀 Start Lease Check", use_container_width=False):
     log_user_action("anonymous", "Clicked Start Lease Check")
     st.session_state.scroll_to_form = True
