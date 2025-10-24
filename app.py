@@ -1,3 +1,29 @@
+import streamlit as st
+
+# 1) Page config (title shown in browser tab & default layout)
+st.set_page_config(page_title="NJ Lease Shield — Landlord Compliance Analyzer", layout="centered")
+
+# 2) Hero/title
+st.title("NJ Lease Shield — Landlord Compliance Analyzer")
+
+# 3) Subhead (one-line value prop)
+st.caption("Upload your lease to flag legal risks and missing notices — in minutes.")
+
+# 4) Professional callout (who it’s for)
+st.markdown("**For:** Landlords & Property Managers in New Jersey (PA coming soon)")
+
+# 5) Short disclaimer (keeps you safe, sets expectations)
+st.info(
+    "This tool provides an automated compliance summary based on NJ laws and public resources. "
+    "It is **not** legal advice.",
+    icon="ℹ️"
+)
+
+st.divider()
+
+# (Optional) Persona switch — doesn't change functionality yet, just stored for later
+persona = st.radio("I am a:", ["Landlord", "Property Manager", "Tenant"], index=0, horizontal=True)
+st.session_state["persona"] = persona
 
 import streamlit as st
 import PyPDF2
