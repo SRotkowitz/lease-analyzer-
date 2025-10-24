@@ -105,15 +105,6 @@ def save_email(email):
     except:
         st.warning("Failed to save email.")
 
-# --- TRUST BOX (kept) ---
-st.markdown("""
-<div style='background-color: #e6f2ff; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;'>
-  <strong>✅ Created by NJ & PA-Trained Legal Professionals</strong><br>
-  Trusted by over <strong>1,200+ landlords and tenants</strong> to flag risky or illegal lease clauses.<br><br>
-  Fast. Confidential. No documents stored.
-</div>
-""", unsafe_allow_html=True)
-
 # --- SCROLL TO FORM CTA (kept) ---
 if "scroll_to_form" not in st.session_state:
     st.session_state.scroll_to_form = False
@@ -355,6 +346,15 @@ st.markdown(f"""
 
 if st.button("Next Testimonial"):
     st.session_state.testimonial_index = (st.session_state.testimonial_index + 1) % len(testimonials)
+
+# --- TRUST BOX (kept) ---
+st.markdown("""
+<div style='background-color: #e6f2ff; padding: 16px; border-radius: 10px; border: 1px solid #99c2ff; margin-top: 10px;'>
+  <strong>✅ Created by NJ & PA-Trained Legal Professionals</strong><br>
+  Trusted by over <strong>1,200+ landlords and tenants</strong> to flag risky or illegal lease clauses.<br><br>
+  Fast. Confidential. No documents stored.
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("""
 **Disclaimer:** This lease analysis is for informational purposes only and does not constitute legal advice.  
