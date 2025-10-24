@@ -358,6 +358,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+st.divider()
+
 # --- Testimonials ---
 if "testimonial_index" not in st.session_state:
     st.session_state.testimonial_index = 0
