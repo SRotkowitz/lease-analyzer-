@@ -364,7 +364,7 @@ testimonials = [
 
 t = testimonials[st.session_state.testimonial_index]
 st.markdown(f"""
-<div style='border-left: 4px solid #ccc; padding-left: 15px; margin-top: 20px; font-style: italic; color: #444;'>
+<div style='border-left: 4px solid #ccc; padding-left: 10px; margin-top: 15px; font-style: italic; color: #ADD8E6;'>
   {t['quote']}<br>
   <span style='font-weight: bold;'>— {t['author']}</span>
 </div>
