@@ -116,14 +116,38 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Center the button with columns and add spacing
-st.write("")  # top spacing
-left, mid, right = st.columns([1, 2, 1])
-with mid:
-    if st.button("🚀 Start Lease Check"):
-        log_user_action("anonymous", "Clicked Start Lease Check")
-        st.session_state.scroll_to_form = True
-st.write("")  # bottom spacing
+# --- Start Lease Check Button (centered + styled) ---
+st.markdown(
+    """
+    <style>
+    div.stButton > button:first-child {
+        background-color: #28a745; /* nice green */
+        color: white;
+        padding: 0.8em 2em;
+        font-size: 1.2em;
+        font-weight: bold;
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #218838; /* darker green on hover */
+        transform: translateY(-2px);
+    }
+    </style>
+    <div style='text-align: center; margin-top: 30px; margin-bottom: 30px;'>
+    """,
+    unsafe_allow_html=True
+)
+
+if st.button("🚀 Start Lease Check"):
+    log_user_action("anonymous", "Clicked Start Lease Check")
+    st.session_state.scroll_to_form = True
+
+st.markdown("</div>", unsafe_allow_html=True)
+
 
 # --- SAMPLE LEASE REPORT (kept) ---
 if st.session_state.scroll_to_form:
